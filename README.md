@@ -1,9 +1,10 @@
 ## SmartDBA (데이터포털) 
 SmartDBA(데이터포털)는 데이터를  누구나 쉽게 활용할 수 있도록 돕기 위해 모델 설계부터 데이터 파이프라인, 그리고 웹서비스까지 직접 개발/구축한 데이터 셀프 서비스입니다.
 
-## Backend/DB
+## Backend/DB/PIPELINE
 - Django
 - MySQL
+- Airflow
 
 ## 대시보드
 - 전사 DB(운영/개발) 모니터링
