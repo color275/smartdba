@@ -11,6 +11,7 @@ mysql -uroot -padmin -h 0.0.0.0 -e "create database smartdba;"
 mysql -uroot -padmin -h 0.0.0.0 -e "create user smartdba@'%' identified by 'smartdba';"
 mysql -uroot -padmin -h 0.0.0.0 -e "grant all privileges on smartdba.* to smartdba@'%';"
 
+# If you need a smartdba.sql file, please contact me separately
 unzip sql/smartdba.zip -d ./sql/
 mysql -uroot -padmin -h 0.0.0.0 smartdba < sql/smartdba.sql
 ```
