@@ -1,5 +1,5 @@
 # Dockerfile Run
-```
+```bash
 # docker network rm smartdba
 # docker volume rm smartdba-db
 docker network create smartdba
