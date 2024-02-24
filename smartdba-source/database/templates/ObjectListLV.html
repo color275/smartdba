@@ -1,0 +1,465 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load database_extras %}
+
+
+
+{% block title %}Smart-오브젝트{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>오브젝트 리스트</h2>
+	<div class="right-wrapper pull-right">
+		<ol class="breadcrumbs">
+			<li>
+				{% if user.is_superuser %}
+					<a href="http://{{ request.get_host }}/admin/database/tablelist/" target="blank">
+						<button type="button" class="btn btn-xs btn-success">Admin</button>
+					</a>
+				{% endif %}
+			</li>
+		</ol>&nbsp;&nbsp;&nbsp;&nbsp;
+	</div>
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}
+
+
+
+	<header class="panel-heading" style="padding-bottom: 3px">
+
+					<div class="form-group">
+
+						<div class="input-group">
+							<div class="ui-widget">
+							{{form.object_name}}
+							</div>
+
+							<span class="input-group-btn">
+								<button type="submit" class="btn btn-lg btn-primary" id="search_button" >Search</button>
+							</span>
+						</div>
+
+					</div>
+
+
+					<div class="pull-right">
+						<div class="form-inline">
+							{{form.oper_cd}}
+							{{form.id_dblist}}
+							{{form.owner}}
+							{{form.choice_object_type}}
+							{{ form.media }}
+						</div>
+					</div>
+					<br><br>
+					<div class="pull-right">
+						<div class="form-inline">
+
+							<label for="chk0"><input  type="checkbox" checked id="chk0" class="toggle-vis" data-column="0">#</label>&nbsp;
+							{% for data in header %}
+								<label for="chk{{forloop.counter}}"><input  type="checkbox" checked id="chk{{forloop.counter}}" class="toggle-vis" data-column="{{forloop.counter}}">{{data}}</label>&nbsp;
+							{% endfor %}
+						</div>
+					</div>
+					<br><br>
+
+
+	</header>
+	<br>
+
+
+	<code><b>배치시간 : {{objects.0.mod_dtm}}</b></code>
+	<section class="panel">
+
+		<b><div class="text-danger" id="err_msg"></div></b>
+		<div class="panel-body">
+			<!-- <table class="table table-bordered table-striped mb-none" id="datatable-details-databaselist"> -->
+
+			<table class="table table-bordered table-striped mb-none" id="datatable-default" style="width: 100%">
+				<thead>
+					<tr>
+						<th style="text-align: center;">#</th>
+						{% for data in header %}
+							<th>{{data}}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for data in objects %}
+						<tr >
+						    <td style="text-align: center;">{{ forloop.counter0|add:page_obj.start_index }}</td>
+							<td>{{data.id_dblist.db_use}}</td>
+							<td>{{data.oper_cd}}</td>
+							<td>{{data.owner}}</td>
+							<td>
+								{% if data.object_type in "FUNCTION,TYPE,PACKAGE,PACKAGE BODY,TYPE BODY,PROCEDURE,TRIGGER" %}
+									<a href="{% url 'ObjectListDV' data.id %}">{{data.object_name|default_if_none:"--"}}</a>
+								{% else %}
+									{{data.object_name|default_if_none:"--"}}
+								{% endif %}
+
+							</td>
+							<td>{{data.object_type}}</td>
+							<td>{{data.status|default_if_none:"--"}}</td>
+							<td>{{data.created}}</td>
+							<td>{{data.last_ddl_time}}</td>
+							<td style="text-align: center;"><b>{% get_crud request.user.id data.id_dblist.id data.oper_cd.id data.owner data.object_name as result %} {{result}}</b></td>
+							<td style="text-align: center">
+								{% if data.oper_cd.id == 3 %}
+									{% if data.id in my_privs_list %}
+											<a class="btn-xs btn-warning" href="#">신청중</a>
+									{% else %}
+										{% if data.object_type in "FUNCTION,PACKAGE,PROCEDURE,SEQUENCE,VIEW" %}
+											<a id="btn_priv" class="modal-with-form btn-xs btn-success" href="#btn_priv_modal" onclick="send_to_modal('{{data.id}}','{{data.id_dblist.id}}','{{data.object_type}}','{{data.object_name}}')">신청</a>
+										{% endif %}
+									{% endif %}
+								{% endif %}
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+
+			{{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+			<div class="pull-right">
+				{% if is_paginated %}
+				  <nav>
+				    <ul class="pagination">
+				      {% if page_obj.has_previous %}
+				        <li>
+				          <a href="?page={{ page_obj.previous_page_number }}">
+				            <span>Prev</span>
+				          </a>
+				        </li>
+				      {% else %}
+				        <li class="disabled">
+				          <a href="#">
+				            <span>Previous</span>
+				          </a>
+				        </li>
+				      {% endif %}
+
+				      {% for page in page_range %}
+				        <li {% if page == page_obj.number %}class="active"{% endif %}>
+				          <a href="?page={{ page }}">{{ page }}</a>
+				        </li>
+				      {% endfor %}
+
+				      {% if page_obj.has_next %}
+				        <li>
+				          <a href="?page={{ page_obj.next_page_number }}">
+				            <span>Next</span>
+				          </a>
+				        </li>
+				      {% else %}
+				        <li {% if not page_obj.has_next %}class="disabled"{% endif %}>
+				          <a href="#">
+				            <span>Next</span>
+				          </a>
+				        </li>
+				      {% endif %}
+				    </ul>
+				  </nav>
+				{% endif %}
+			</div>
+		</div>
+
+
+	</section>
+
+	<div id="btn_priv_modal" class="modal-block modal-block-primary mfp-hide">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">권한 신청 >> <span id="object_name"></span></h2>
+			</header>
+			<form method="POST" action="{% url 'TuningListLV' %}" class="form-horizontal mb-lg" role="form" >
+			<div class="panel-body">
+					<div class="form-group">
+						<label class="col-md-3 control-label">필요한 권한 선택 {{data.table_name}}</label>
+						<div class="col-md-6">
+							<div id="table_id" style="display: none"></div>
+							<div id="id_dblist" style="display: none"></div>
+							<div id="user_id" style="display: none"></div>
+							<div id="object_type" style="display: none"></div>
+							<select class="form-control" multiple="multiple" data-plugin-multiselect id="req_priv_list" name="req_priv_list">
+									<option value="SELECT">SELECT</option>
+									<option value="EXECUTE">EXECUTE</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">권한 신청 사유</label>
+						<div class="col-sm-9">
+							<textarea rows="5" class="form-control" id = "txt_req_reason" name = "txt_req_reason" placeholder="Type your comment..." ></textarea>
+						</div>
+					</div>
+			</div>
+			<footer class="panel-footer">
+				<div class="row">
+					<div class="col-md-12 text-right">
+						<button id="submitRequest" type="button" class="btn btn-primary">권한신청</button>
+						<button id="submitRequestCancel" name="submitRequestCancel" class="btn btn-default modal-dismiss">취소</button>
+					</div>
+				</div>
+			</footer>
+			</form>
+		</section>
+	</div>
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	$(document).ready(function() {
+
+		$('#datatable-default tfoot th').each( function (i) {
+	        var title = $('#datatable-default thead th').eq( $(this).index() ).text();
+	        $(this).html( '<input type="text" class="form-control input-sm" placeholder="Search" '+title+'" data-index="'+i+'" />' );
+
+
+	    } );
+
+		var table = $('#datatable-default').DataTable({
+	        responsive: true,
+			"scrollCollapse": true,
+	        "pageLength": 10,
+	        "order": [],
+	        "bFilter": true,
+	        // "paging": true,
+	        // dom: 'Brtipl',
+	        dom: 'Brt',
+	        buttons: [],
+	        // buttons: [
+	        //     {
+	        //     extend: 'excelHtml5',
+	        //     exportOptions: {
+         //            columns: ':visible'
+         //        },
+	        //     filename: "SmartDBA_데이터베이스정보",
+	        //     title: '',
+	        //     className: 'btn btn-success btn-xs'
+	        // },
+	        // ],
+	        "scrollX": true,
+	        "scrollY": "500px",
+	        "columnDefs": [ {
+	                   "searchable": false,
+	                   "orderable": false,
+	                   "targets": 0
+	               } ],
+
+	    });
+
+
+
+	    $( table.table().container() ).on( 'keyup', 'tfoot input', function () {
+	            table
+	                .column( $(this).data('index') )
+	                .search( this.value )
+	                .draw();
+	        } );
+
+
+
+	    $('input.toggle-vis').on( 'change', function (e) {
+
+	            e.preventDefault();
+
+	            // Get the column API object
+	            var column = table.column( $(this).attr('data-column') );
+
+	            // Toggle the visibility
+	            column.visible( ! column.visible() );
+	        } );
+
+
+	});
+
+	$("#submitRequest").click(function(){
+		// #################################################################
+		// ## submitRequest
+		// #################################################################
+
+		console.log("click request")
+
+
+		var req_priv_list = [];
+		    $('#req_priv_list :selected').each(function(i, selected) {
+		        req_priv_list[i] = $(selected).val();
+		    });
+
+
+	  	var req_reason = document.getElementById("txt_req_reason").value;
+	  	var table_id = $("#table_id").html();
+	  	var user_id = $("#user_id").html();
+	  	var object_type = $("#object_type").html();
+
+		console.log(req_priv_list)
+		console.log(req_reason)
+		console.log(table_id)
+
+
+	  	if((req_priv_list.length == 0)||(req_reason == ""))
+	  	{
+	  		alert("모든 내용을 입력해주세요");
+	  		return;
+	  	}
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxReqestPriv' %}",
+	      data: { 'req_priv_list' : req_priv_list,
+				  'req_reason' : req_reason,
+				  'table_id' : table_id,
+				  'user_id' : user_id,
+				  'object_type' : object_type,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      	$("#submitRequestCancel").click();
+	      	alert("권한 신청이 완료되었습니다.")
+	      	location.reload();
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	function send_to_modal(table_id, id_dblist, object_type, object_name){
+
+		$("#table_id").html(table_id);
+		$("#id_dblist").html(id_dblist);
+		$("#object_type").html(object_type);
+		$("#object_name").html(object_name);
+
+		if ( object_type == "SEQUENCE" || object_type == "VIEW" )
+		{
+			document.getElementById("req_priv_list").options[1].disabled = true;
+		}
+		else
+		{
+			document.getElementById("req_priv_list").options[0].disabled = true;
+		}
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxCheckTabPriv' %}",
+	      data: { 'table_id' : table_id,
+	      		  'id_dblist': id_dblist,
+	      		  'object_type' : object_type,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      				console.log(json.err_yn)
+
+
+	      				if ( json.err_yn == "N" )
+	      				{
+		      				priv = []
+		      				$.each(json.priv, function(i, val){
+		      				    console.log(val.privilege)
+		      				    priv[i+1] = val.privilege
+		      				});
+
+		      				var element = document.getElementById('req_priv_list');
+		      				for (var i = 0; i < element.options.length; i++) {
+		      				    element.options[i].selected = priv.indexOf(element.options[i].value) >= 0;
+		      				}
+
+		      				$("#req_priv_list").multiselect("refresh");
+
+		      				$("#user_id").html(json.user_id);
+
+		      				$("#err_msg").html("")
+		      			}
+		      			else {
+		      				$("#submitRequestCancel").click();
+		      				alert(json.err_msg)
+		      			}
+
+	                },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	}
+
+</script>
+
+
+{%endblock%}
+
+
+
+
+
+

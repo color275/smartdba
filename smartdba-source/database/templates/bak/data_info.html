@@ -1,0 +1,89 @@
+{% if dataset %}
+	<div class="col-md-9">
+
+
+	<!-- 컬럼 설명 -->
+		<section class="panel">
+				<header class="panel-heading">
+					<div class="row">
+						<div class="col-md-9 mt-md">
+							<h2 class="h2 mt-none mb-sm text-dark text-bold">{{dataset.col_comments}}</h2>
+							<input name="col_comments" value="{{dataset.col_comments}}" type="hidden">
+							<h5 class="h5 m-none text-dark text-bold">{{dataset.domain_name}} <i class="fa  fa-chevron-right" aria-hidden="true"></i> {{dataset.comments}} </h5>
+						</div>
+						<div class="col-md-3 text-right"> <!-- mt-md mb-md -->
+								<i class="fa fa-male" aria-hidden="true"></i>&nbsp;&nbsp;{{dataset.it_manager_name}} ({{dataset.it_manager_team}})
+								<br/>
+								<i class="fa fa-mobile" aria-hidden="true"></i>&nbsp;&nbsp;&nbsp;010-7572-2752
+								<br/>
+								<i class="fa fa-comments-o" aria-hidden="true"></i>&nbsp;lee.ch@gsshop.com
+						</div>
+					</div>
+				</header>
+				<div class="panel-body">
+					<div class="bill-info">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="bill-to">
+									<p class="h5 mb-xs text-success text-semibold"><i class="fa   fa-check-square-o" aria-hidden="true"></i> 데이터 설명: </p>
+									<ul>
+										<li><b>{{dataset.column_explain|default_if_none:dataset.col_comments|linebreaks}}</b></li>
+									</ul>
+								</div>
+
+							</div>
+
+						</div>
+					</div>
+
+					<div class="table-responsive">
+						<p class="h5 mb-xs text-success text-semibold"><i class="fa   fa-check-square-o" aria-hidden="true"></i> 데이터 상세</p>
+							<ul>
+								<li><b>저장되어 있는 위치</b> : {{dataset.db_use}} <a href="#" dataset-toggle="tooltip" data-placement="top" title="클릭: 접속 방법을 확인하세요"><i class="fa fa-external-link"></i></a></li>
+								<li><b>데이터 수정 시간</b> : 실시간/배치(1시간 주기) </li>
+								<li><b>테이블 명(한글/영문)</b> : {{dataset.comments}} / {{dataset.table_name}}</li>
+								<li><b>컬럼 명(한글/영문)</b> : {{dataset.col_comments}} / {{dataset.column_name}}</li>
+								<li><b>컬럼 유형</b> : {{dataset.column_type_value}} {%if dataset.column_type != "0" %}/ {{dataset.code_key}}{%endif%}</li>
+							</ul>
+					</div>
+
+					<br>
+
+					<div class="table-responsive">
+						<p class="h5 mb-xs text-success text-semibold"><i class="fa fa-check-square-o" aria-hidden="true"></i> SQL 샘플 (결과를 확인해보세요)</p>
+						<div class="form-group" >
+							<!-- <label class="col-md-2 trol-label" for="textareaDefault">HTML Editor</label> -->
+							<div>
+							<!-- 	<textarea rows="1" class="form-control" id="codemirror_sql_code" data-plugin-codemirror='{"indentUnit":7}' data-plugin-options='{ "mode": "text/x-sql", "theme": "base16-light","lineNumbers": false, "indentUnit": 3}'>{{dataset.sql_text}}</textarea> -->
+
+								<textarea class="text_sql form-control" id="codemirror_sql_code1" name="text_sql">{{dataset.sql_text}}</textarea>
+
+							</div>
+						</div>
+						<!-- <pre><code class="sql">{{dataset.sql_text}}</code></pre> -->
+					</div>
+
+
+
+					<div class="text-right">
+						<a href="#" class="btn btn-primary"><i class="fa fa-refresh"></i> 초기화</a>
+						<a href="#" class="btn btn-primary"><i class="fa fa-download"></i> 저장</a>
+						<a href="#" class="btn btn-primary"><i class="fa fa-upload"></i> 불러오기</a>
+						&nbsp;&nbsp;
+						<!-- <a href="#" class="btn btn-warning"><i class="fa  fa-play-circle"></i> SQL실행</a>
+						<a class="mb-xs mt-xs mr-xs modal-sizes btn btn-default" href="#modalLG">Large</a> -->
+						<button type="submit" class="btn_sql mb-xs mt-xs mr-xs btn btn-warning"> SQL실행</button>
+						<!-- <button class="btn btn-primary" id="search_button" type="submit">Search</button> -->
+						<!-- <a class="mb-xs mt-xs mr-xs modal-sizes btn btn-warning" href="#modalLG"> SQL실행</a> -->
+
+
+
+
+					</div>
+
+			</div>
+			</section>
+	<!-- end: page -->
+
+	</div>
+{% endif %}

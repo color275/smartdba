@@ -1,0 +1,242 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+{% block title %}Smart-권한{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>테이블 리스트</h2>
+	<div class="right-wrapper pull-right">
+	  <ol class="breadcrumbs">
+	    <li>
+	      {% if user.is_superuser %}
+	        <a href="http://{{ request.get_host }}/admin/database/userrequesttabprivhist/" target="blank">
+	          <button type="button" class="btn btn-xs btn-success">Admin</button>
+	        </a>
+	      {% endif %}
+	    </li>
+	  </ol>&nbsp;&nbsp;&nbsp;&nbsp;
+	</div>
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}
+
+
+
+	<header class="panel-heading" style="padding-bottom: 3px">
+
+					<div class="form-group">
+
+						<div class="form-inline">
+							{{form.grantee}}
+							{{form.table_name}}
+							<button type="submit" class="btn btn-lg btn-primary" style="width: 7%" id="search_button" >Search</button>
+						</div>
+
+					</div>
+
+
+					<div class="pull-right">
+						<div class="form-inline">
+							{{form.oper_cd}}
+							{{form.id_dblist}}
+							{{form.choice_tab_or_col}}
+							{{ form.media }}
+						</div>
+					</div>
+					<br><br>
+
+	</header>
+	<br>
+
+
+	<code><b>배치시간 : {{objects.0.reg_dtm}}</b></code>
+	<section class="panel">
+
+		<b><div class="text-danger" id="err_msg"></div></b>
+		<div class="panel-body">
+			<!-- <table class="table table-bordered table-striped mb-none" id="datatable-details-databaselist"> -->
+
+			<table class="table table-bordered table-striped mb-none" id="datatable-custom" style="width: 100%">
+				<thead>
+					<tr>
+						<th>#</th>
+						{% for data in header %}
+							<th>{{data}}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for data in objects %}
+						<tr >
+							<td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+							<td>{{data.id_dblist.db_use}}</td>
+							<td>{{data.oper_cd}}</td>
+							<td>{{data.grantee}}</td>
+							<td>{{data.owner}}</td>
+							<td>{{data.table_name}}</td>
+							<td>{{data.privilege}}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+
+			{{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+			<div class="pull-right">
+				{% if is_paginated %}
+				  <nav>
+				    <ul class="pagination">
+				      {% if page_obj.has_previous %}
+				        <li>
+				          <a href="?page={{ page_obj.previous_page_number }}">
+				            <span>Prev</span>
+				          </a>
+				        </li>
+				      {% else %}
+				        <li class="disabled">
+				          <a href="#">
+				            <span>Previous</span>
+				          </a>
+				        </li>
+				      {% endif %}
+
+				      {% for page in page_range %}
+				        <li {% if page == page_obj.number %}class="active"{% endif %}>
+				          <a href="?page={{ page }}">{{ page }}</a>
+				        </li>
+				      {% endfor %}
+
+				      {% if page_obj.has_next %}
+				        <li>
+				          <a href="?page={{ page_obj.next_page_number }}">
+				            <span>Next</span>
+				          </a>
+				        </li>
+				      {% else %}
+				        <li {% if not page_obj.has_next %}class="disabled"{% endif %}>
+				          <a href="#">
+				            <span>Next</span>
+				          </a>
+				        </li>
+				      {% endif %}
+				    </ul>
+				  </nav>
+				{% endif %}
+			</div>
+		</div>
+
+
+	</section>
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	$(document).ready(function() {
+
+		$('#datatable-default tfoot th').each( function (i) {
+	        var title = $('#datatable-default thead th').eq( $(this).index() ).text();
+	        $(this).html( '<input type="text" class="form-control input-sm" placeholder="Search" '+title+'" data-index="'+i+'" />' );
+
+
+	    } );
+
+		var table = $('#datatable-custom').DataTable({
+	        responsive: true,
+			"scrollCollapse": true,
+	        "pageLength": 100,
+	        // "order": [],
+	        // "bFilter": true,
+	        // "paging": true,
+	        // dom: 'Brtipl',
+	        dom: 'Brt',
+	        buttons: [],
+	        // buttons: [
+	        //     {
+	        //     extend: 'excelHtml5',
+	        //     exportOptions: {
+         //            columns: ':visible'
+         //        },
+	        //     filename: "SmartDBA_데이터베이스정보",
+	        //     title: '',
+	        //     className: 'btn btn-success btn-xs'
+	        // },
+	        // ],
+	        "scrollX": true,
+	        "scrollY": "500px",
+	        "columnDefs": [ {
+	                   "searchable": false,
+	                   "orderable": false,
+	                   "targets": 0
+	               } ],
+
+	    });
+
+
+	});
+
+
+</script>
+
+
+{%endblock%}
+
+
+
+
+
+

@@ -1,0 +1,900 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+
+
+	<link rel="stylesheet" href="{% static 'assets/vendor/bootstrap-multiselect/bootstrap-multiselect.css' %}" />
+	<link rel="stylesheet" href="{% static 'custom/css/jquery-ui.css' %}">
+
+
+	<style type="text/css">
+		th, td { white-space: nowrap; }
+	</style>
+
+
+
+
+
+	<style type="text/css" >
+
+
+		.bold-text {
+		    font-weight: bold;
+		    color: red;
+		}
+
+
+		.ui-menu-item .ui-menu-item-wrapper.ui-state-active {
+		    background: #6693bc !important;
+		    font-weight: bold !important;
+		    color: #ffffff !important;
+		} 
+
+
+
+		#datatable-result_filter {
+			width:30%;
+			position:relative;
+		    float: right;
+		}
+		.buttons-excel {
+			background-color: #4CAF50; /* Green */
+			color: white;
+			text-align: center;
+			text-decoration: none;
+			display: inline-block;
+		}
+		div.dt-buttons{
+		position:relative;
+		float:right;
+		}
+
+		pre {
+		            overflow-x: auto;
+		            white-space: pre-wrap;
+		            white-space: -moz-pre-wrap;
+		            white-space: -pre-wrap;
+		            white-space: -o-pre-wrap;
+		            word-wrap: break-word;
+		            background-color: #FFFFFF;
+		            border: 0px dashed #FFFFFF;
+		            padding-top: 0px;
+                    padding-bottom: 0px;
+                    padding-left: 0px;
+                    padding-right: 0px;
+                    float: none;
+                    margin: 0px;
+		         }
+
+		.wrap-loading{ /*화면 전체를 어둡게 합니다.*/
+		    position: fixed;
+		    left:0;
+		    right:0;
+		    top:0;
+		    bottom:0;
+		    background: rgba(0,0,0,0.2); /*not in ie */
+		    filter: progid:DXImageTransform.Microsoft.Gradient(startColorstr='#20000000', endColorstr='#20000000');    /* ie */
+
+		}
+
+	    .wrap-loading div{ /*로딩 이미지*/
+	        position: fixed;
+	        top:50%;
+	        left:50%;
+	        margin-left: -21px;
+	        margin-top: -21px;
+	    }
+
+    	.wrap-help{ /*화면 전체를 어둡게 합니다.*/
+    	    position: fixed;
+    	    left:0;
+    	    right:0;
+    	    top:0;
+    	    bottom:0;
+    	    background: rgba(0,0,0,0.8); /*not in ie */
+    	    filter: progid:DXImageTransform.Microsoft.Gradient(startColorstr='#20000000', endColorstr='#20000000');    /* ie */
+
+    	}
+
+        .wrap-help div{ /*로딩 이미지*/
+            position: fixed;
+            top:50%;
+            left:50%;
+            margin-left: -21px;
+            margin-top: -21px;
+        }
+
+	    .display-none{ /*감추기*/
+	        display:none;
+	    }
+
+		.overlay {
+		  display: none;
+		  z-index: 1000;
+		  position: fixed;
+		  width: 100%; height: 100%;
+		  left: 0; top: 0;
+		  background-color: rgba(0,0,0, 0.4);
+		  overflow-x: hidden;
+		}
+
+
+
+		.wrap-help{ /*화면 전체를 어둡게 합니다.*/
+		    position: fixed;
+		    left:0;
+		    right:0;
+		    top:0;
+		    bottom:0;
+		    background: rgba(0,0,0,0.8); /*not in ie */
+		    filter: progid:DXImageTransform.Microsoft.Gradient(startColorstr='#20000000', endColorstr='#20000000');    /* ie */
+
+		}
+
+	    .wrap-help div{ /*로딩 이미지*/
+	        position: fixed;
+	        top:50%;
+	        left:50%;
+	        margin-left: -21px;
+	        margin-top: -21px;
+	    }
+
+	    .display-none{ /*감추기*/
+	        display:none;
+	    }
+
+	    .sql_history_table {
+	    	/*border: 1px solid #444444;	    	*/
+			padding: 0px;
+			width: 100%;
+			height: 250px;
+
+	    }
+	    /*.sql_history_table tr td {
+	    	border: 1px solid #444444;
+	    }*/
+
+	  /*  .CodeMirror {
+			font-family: Arial, monospace;
+			font-size: 12px;
+		}*/
+		#tab-list .close{
+			margin-left: 7px;
+		}
+	</style>
+
+	<style>
+.btn_outline {
+  border: 2px solid black;
+  background-color: white;
+  color: black;
+  padding: 5px 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+/* Green */
+.success_outline {
+  border-color: #4CAF50;
+  color: green;
+}
+
+.success_outline:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+/* Blue */
+.info_outline {
+  border-color: #2196F3;
+  color: dodgerblue;
+}
+
+.info_outline:hover {
+  background: #2196F3;
+  color: white;
+}
+
+/* Orange */
+.warning_outline {
+  border-color: #ff9800;
+  color: orange;
+}
+
+.warning_outline:hover {
+  background: #ff9800;
+  color: white;
+}
+
+/* Red */
+.danger_outline {
+  border-color: #f44336;
+  color: red;
+}
+
+.danger_outline:hover {
+  background: #f44336;
+  color: white;
+}
+
+/* Gray */
+.default_outline {
+  border-color: #e7e7e7;
+  color: black;
+}
+
+.default_outline:hover {
+  background: #e7e7e7;
+}
+</style>
+
+</head>
+
+<header class="page-header">
+	<table style="width: 100%" border=0>
+		<tr>
+			<td>
+				<h2>우리 회사에는 어떤 데이터가 있을까요?
+				</h2>
+			</td>
+
+			<td style="text-align: right;">
+<!-- 				<a href="#" onclick="click_question();">
+					<img src="{% static 'custom/img/question.png' %}" style="width: 7%">
+				</a> -->
+				&nbsp;&nbsp;&nbsp;
+			</td>
+		</tr>
+	</table>
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  id="data_search_keyword">
+
+	{% csrf_token %}
+
+	<section role="main">
+		<header class="page-header">
+			<h2>01.데이터 검색 >> {{objects.data_title}}</h2>
+		</header>
+		<div class="row">
+			<div id="div_showSql" class="col-md-12">
+				<section class="panel">
+					<div class="panel-body" class="row">
+
+						<table class="table mb-none" border=0>
+							<tr>
+								<td style="width: 15%; vertical-align: top;">
+									<span class="text-primary"><b></i># 데이터 설명</b></span>
+								</td>
+								<td colspan="5">
+									<div id="div_data_explain">{{objects.data_explain|safe}}</div><br>
+								</td>
+							</tr>
+							<tr>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 요청 직원</b></span>
+								</td>
+								<td>
+									<span id="div_req_name">
+										{% for obj in objects.id_req_users.all %}
+											{{obj}}<br>
+										{% endfor %}
+									</span>
+								</td>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 등록자</b></span>
+								</td>
+								<td style="width: 20%">
+									<span id="div_reg_name">
+										{{objects.id_reg_user}}
+									</span><br>
+								</td>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 보안 승인</b></span>
+								</td>
+								<td style="width: 5%">
+									<span id="div_prov_yn1">{{objects.get_prov_yn1_display}}</span><br>
+								</td>
+							</tr>
+							<tr>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 수정 가능 직원</b></span>
+								</td>
+								<td>
+									<span id="div_edit_name">
+										{% for obj in objects.id_mod_psbl_users.all %}
+											{{obj}}<br>
+										{% endfor %}
+									</span><br>
+								</td>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 수정자</b></span>
+								</td>
+								<td style="width: 20%">
+									<span id="div_mod_name">
+										{{objects.id_mod_user}}
+									</span><br>
+								</td>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 성능 승인</b></span>
+								</td>
+								<td style="width: 5%">
+									<span id="div_prov_yn2">{{objects.get_prov_yn2_display}}</span><br>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span class="text-primary"><b># 부가정보</b></span>
+								</td>
+								<td colspan="5">
+									<li>
+										<span id="div_db_type">
+											{% if objects.realoretl == "0" %}
+												<b><span class="text-primary">약 1시간 전 데이터</span></b>
+											{% else %}
+												<b><span class="text-primary">실시간 데이터</span></b>
+											{% endif %}
+										</span>
+									</li>
+									<li>
+										<span id="div_db_use">
+											<b><span class="text-primary">DB용도 : </span></div> {{objects.id_dblist}}
+										</span>
+									</li>
+									<li>
+										<span id="div_execute_cnt">
+											<b><span class="text-primary">실행횟수 : </span></div> {{objects.execute_cnt}}회
+										</span>
+									</li>
+									<li>
+										<span id="div_time">
+											<b><span class="text-primary">평균 수행시간 : </span></div> {{exec_time.execute_time__avg|floatformat}}초
+										</span>
+									</li>
+									<li>
+										<span id="div_privacy_yn">
+											<b><span class="text-primary">개인정보 여부 : </span></div> <b><span class="text-danger">{{objects.get_privacy_yn_display}}</span></b>
+										</span>
+									</li>
+								</td>
+							</tr>
+							<tr id="tr_input" style="display: none">
+								<td>
+									<span class="text-primary"><b># 입력값</b></span>
+								</td>
+								<td colspan="3">
+									<div class="form-group">
+										<div class="row">
+											<div id="div_inputs">
+											</div>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr id="tr_showSql" style="display: none">
+								<td>
+									<span class="text-primary"><b># 관련SQL</b> :</span>
+								</td>
+								<td colspan="5">
+									<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control" style="height: 100%" id="codemirror_sql_code" name="text_sql" ></textarea></pre>
+								</td>
+							</tr>
+						</table>
+							<input id="div_sql_id" name="div_sql_id" type="hidden">
+							<input id="div_id_dblist" name="div_id_dblist" type="hidden">
+							<input id="div_data_title" name="div_data_title" type="hidden">
+
+						<div class="pull-left">
+							<b><span id="div_error" style="display: none"  class="text-success"></span></b>
+						</div>
+						<div class="pull-right">
+							<span id="div_btn_diable"></span>
+							<button id="btn_dataResult" type="button" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-primary"> <i class="fa fa-youtube-play"></i> 데이터 확인</button>
+							<button id="btn_download" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-primary" type="input" formaction="{% url 'DataViewExportData' %}" style="display: none;"> <i class="fa fa-youtube-play"></i> 엑셀 다운로드</button>
+							<!-- <button id="btn_datadownload" type="button" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-primary"> <i class="fa fa-youtube-play"></i> 엑셀 다운로드</button> -->
+							<button id="btn_showSql" type="button" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-info"> <i class="fa fa-question-circle"></i> SQL 보기</button>
+							<a id="btn_editSql" type="button" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-info" style="display: none"> <i class="fa fa-question-circle"></i> SQL 수정</a>
+							
+							<a type="button" class="btn btn-primary" href="/database/DataSearchLV/?page={{ request.session.page_number }}">목록으로</a>
+							<button id="btn_delSql" type="input" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-info" style="display: none" formaction="{% url 'DataListDelView' %}" onclick="if (confirm('정말 삭제하시겠습니까?')) commentDelete(1); return false"> <i class="fa fa-question-circle"></i> SQL 삭제</button>
+						</div>
+						<br><br><br>
+
+						<div id="divDataResult" >
+						</div>
+
+					</div>
+				</section>
+			</div>
+		</div>
+	</section>
+
+	<div class="wrap-loading display-none" style="z-index: 10000">
+		    <div><button id="btn_ajax_cancel" type="button">
+		    	<font color="red" size="5"><span id="output1">0</span>초</font>
+		    	<br><b><span id="output2"></span></b>
+		    	<br><font color=blue>오전 9시~10시에는 사용자가 많아
+		    	<br>시간이 조금 더 걸릴 수 있습니다.</font>
+		    	<br>(취소는 로딩 바 클릭)
+		    	<img src="{% static 'custom/img/ajax-loader2.gif' %}" style="width: 80%" /></button></div>
+	</div>
+
+
+
+	<input type="hidden" id="hidden_keyword" name="hidden_keyword" value="{{keyword}}">
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+<!-- <script src="https://code.jquery.com/jquery-1.12.4.js"></script> -->
+<script src="{% static 'custom/js/jquery-ui.js' %}"></script>
+
+
+<script>
+$(document).ready(function(e) {
+
+	var column_id = {{objects.id}};
+
+	$("#div_sql_id").val('{{objects.id}}')
+	$("#div_id_dblist").val('{{objects.id_dblist.id}}')
+	$("#div_data_title").val('{{objects.data_title}}')
+
+    $.ajax({
+      type: "POST",
+      url: "{% url 'ajaxMetaDataDetail' %}",
+      data: { 'column_id':column_id,
+              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+      dataType: "json",
+	"success": function(json) {
+
+        editor_select.setValue(json.dataset.sql_text);
+
+		jQuery("#div_showSql").show();
+
+
+		$("#divDataResult").empty();
+
+		jQuery("#tr_input").hide();
+
+		$('#div_inputs').html("");
+
+
+		var bind;
+		var i = 1;
+		for ( k in json.bind_value ) {
+			jQuery("#tr_input").show();
+			bind = json.bind_value[k];
+			bind = bind.replace(":","");
+
+			if ( bind == "in_param" )
+			{
+				$('#div_inputs').append (
+					'<div class="col-sm-8" style="padding:1px"><input id="txt_input'+i+'" name="txt_inputs[]" bind_name="'+bind+'" type="text" class="form-control txt_input" placeholder="멀티컬럼(콤마로 구분)"><input id="txt_binds'+i+'" name="txt_binds[]" value="'+bind+'" type="hidden" class="form-control"></div>'
+            );
+			}
+			else
+			{
+				$('#div_inputs').append (
+					'<div class="col-sm-3" style="padding:1px"><input id="txt_input'+i+'" name="txt_inputs[]" bind_name="'+bind+'" type="text" class="form-control txt_input" placeholder="'+bind+'"><input id="txt_binds'+i+'" name="txt_binds[]" value="'+bind+'" type="hidden" class="form-control"></div>'
+            );
+			}
+			i = i + 1;
+		}
+
+
+		var prov_yn = json.dataset.prov_yn
+		console.log("prov_yn : " + prov_yn)
+
+		$("#btn_dataResult").show();
+
+		if ( prov_yn != 'Y' )
+		{
+			$("#btn_dataResult").attr("disabled", true);
+			console.log("진입")
+
+			if (prov_yn == 'B')
+				// $("#div_btn_diable").html("승인 대기 상태입니다.")
+				$("#div_error").html("[안내] 승인 대기 상태입니다.")
+				jQuery('#div_error').show();
+			if (prov_yn == 'C')
+				// $("#div_btn_diable").html(data.ds_data_list[0].db_use + "는 권한이 있는 사용자만 실행 가능합니다.")
+				$("#div_error").html("[안내] 개인정보가 포함되어 있어 열람 권한을 신청한 직원만 조회 가능합니다.")
+				jQuery('#div_error').show();
+			if (prov_yn == 'D')
+				// $("#div_btn_diable").html(data.ds_data_list[0].db_use + "는 권한이 있는 사용자만 실행 가능합니다.")
+				$("#div_error").html("[안내] 데이터 요청 메뉴에서 조회 권한을 신청해주세요")
+				jQuery('#div_error').show();
+		}
+		else
+		{
+			$("#btn_dataResult").attr("disabled", false);
+			$("#div_btn_diable").html("")
+			jQuery('#div_error').hide();
+		}
+
+		if (json.dataset.data_type == 0 )
+		{
+			$("#btn_dataResult").hide();
+		}
+    },
+
+      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+      	alert("작성한 SQL에 에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+
+      },
+ 	});
+})
+</script>
+
+
+
+
+
+
+
+<script>
+    config_select = {
+        lineNumbers:false,
+		mode:  "text/x-sql",
+		theme: "base16-light",
+		smartIndent: true,
+		lineWrapping: true,
+		readOnly: true,
+    };
+
+    editor_select = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_code"), config_select);
+
+    editor_select.setSize("100%",130);
+</script>
+
+<script type="text/javascript">
+    $("#btn_showSql").click(function(){
+
+
+	    if($("#tr_showSql").css("display") == "none"){
+	        jQuery('#tr_showSql').show();
+	        $(this).html('<i class="fa fa-question-circle"></i> SQL 숨기기');
+	    } else {
+	        jQuery('#tr_showSql').hide();
+	        $(this).html('<i class="fa fa-question-circle"></i> SQL 보기');
+	    }
+    	editor_select.refresh()
+    })
+
+    $("#btn_download").click(function(){
+	  	var txt_inputs = $('input[name="txt_inputs[]"]').map(function(){
+	                    return this.value
+	                }).get();
+
+
+    	check = 0
+    	for ( v in txt_inputs )
+    	{
+    		if(txt_inputs[v] == "")
+    		{
+    			check = 1
+    		}
+    	}
+
+    	if ( check == 1)
+    	{
+
+    		$("#div_error").html("[안내] 모든 입력값을 입력해야 정상적인 데이터 확인이 가능합니다.")
+    		jQuery("#div_error").show();
+    		return false;
+    	}
+
+
+
+    	msg = $('#div_error').text()
+    	
+    	$("#div_error").html(msg+"<br><font color=blue>&nbsp;&nbsp;&nbsp;&nbsp;엑셀 다운로드 중입니다. 조금만 기다려주세요</font>")
+    	jQuery("#div_error").show();
+
+    });
+
+    $("#btn_dataResult").click(function(){
+    	// #################################################################
+    	// ## 실행 버튼 클릭 시
+    	// ## ajaxExecuteSQL
+    	// #################################################################
+
+	  	// SQL 결과 창으로 tab focus 이동
+	  	var txt_inputs = $('input[name="txt_inputs[]"]').map(function(){
+	  	                    return this.value
+	  	                }).get();
+
+	  	var txt_binds = $('input[name="txt_binds[]"]').map(function(){
+	  	                    return this.value
+	  	                }).get();
+
+	  	// var txt_binds = $('input[name="txt_binds[]"]').map(function(){
+	  	//                     return this.value;
+	  	//                 }).get();
+
+
+	  	var data_title = '{{objects.data_title}}';
+	  	var data_type = '1';
+
+	  	console.log(txt_inputs)
+	  	console.log(txt_binds)
+	  	console.log(data_title)
+
+
+
+    	sql_id = '{{objects.id}}';
+    	id_dblist = '{{objects.id_dblist.id}}';
+
+    	console.log(sql_id)
+    	console.log(id_dblist)
+
+    	check = 0
+    	for ( v in txt_inputs )
+    	{
+    		if(txt_inputs[v] == "")
+    		{
+    			check = 1
+    		}
+    	}
+
+    	if ( check == 1)
+    	{
+    		$("#div_error").html("[안내] 모든 입력값을 입력해야 정상적인 데이터 확인이 가능합니다.")
+    		jQuery("#div_error").show();
+    		return;
+    	}
+
+    	var $output = $("#output");
+    	$output.text(0);
+
+    	elasedTime();
+
+  	    xhr = $.ajax({
+  	      type: "POST",
+  	      url: "{% url 'ajaxDataviewExecuteSQL' %}",
+  	      data: { 'sql_id':sql_id,
+  	      		  'id_dblist':id_dblist,
+  	      		  'txt_inputs':txt_inputs,
+  	      		  'txt_binds':txt_binds,
+  	      		  'data_title':data_title,
+  	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+  	      dataType: "json",
+  	      "success": function(data) {
+  	                    var tableHeaders='';
+  	                    $.each(data.ds_columns, function(i, val){
+  	                        tableHeaders += "<th>" + val + "</th>";
+
+  	                    });
+
+
+  	                    // var option='data-plugin-options=\'{"searchPlaceholder": "결과 내 검색"}\''
+
+  	                    $("#divDataResult").empty();
+
+
+  	                    $("#divDataResult").append('<table  style="width:100%;white-space: nowrap;" id="datatable-result" class="table table-bordered table-striped mb-none csort" ><thead><tr>' + tableHeaders + '</tr></thead></table>');
+
+
+  	                    if ( data.excel_down_expyn == "Y") {
+	  	                    var table = $('#datatable-result').DataTable({
+	  				            responsive: true,
+	  				            "scrollX": true,
+	  							"scrollCollapse": true,
+	  				            "pageLength": 10,
+	  				            "order": [],
+	  				            "bFilter": true,
+	  				            "paging": true,	  				            
+	  				            // "scrollX": true,
+	  				            // "scrollY": "200px",
+	  				            data: data['ds_result']
+
+	  				        });
+	  				    }
+	  				    else
+	  				    {
+	  	                    var table = $('#datatable-result').DataTable({
+	  				            responsive: true,
+	  				            "scrollX": true,
+	  							"scrollCollapse": true,
+	  				            "pageLength": 10,
+	  				            "order": [],
+	  				            "bFilter": true,
+	  				            "paging": true,
+	  				            dom: '<lBfrtip>',
+	  				            buttons: [
+	  				                {
+		                                extend: 'excelHtml5',
+		                                filename: data.data_title,
+		                                title: ''
+		                            },
+	  				            ],
+	  				            // "scrollX": true,
+	  				            // "scrollY": "200px",
+	  				            data: data['ds_result']
+
+	  				        });
+	  				    }
+
+  				        table.buttons().container()
+  				                .appendTo( '#example_wrapper .col-md-6:eq(0)' );
+
+  				        // $("#divDataResult").columns.adjust().draw();
+  				        clearInterval(repeat);
+
+
+
+  				        if ( data.error_yn == "Y" )
+  				        {
+	  				        $("#div_error").html(data.error_message)
+	  				        if ( data.excel_down_expyn == "Y")
+	  				        {
+	  				        	jQuery("#btn_download").show();
+	  				        }
+  				        }
+  				        else
+  				        {
+	  				        $("#div_error").html("[안내] 데이터 조회가 완료되었습니다 (MAX:10,000건)")
+	  				    }
+  				        jQuery("#div_error").show();
+  	                },
+  	        beforeSend:function(){
+  				        $('.wrap-loading').removeClass('display-none');
+  				    },
+  		    complete:function(){
+  		        $('.wrap-loading').addClass('display-none');
+  		    },
+  	      error: function(request, status, error){
+  	      	$("#div_error").html("[안내] 오류가 발생되었습니다. 관리자에 문의해주세요.")
+  	      	jQuery("#div_error").show();
+  	      	clearInterval(repeat);
+
+
+  	      },
+  	    });
+    })
+
+  let repeat;
+	function elasedTime(theObject) {
+
+       var $output1 = $("#output1");
+       var $output2 = $("#output2");
+       var count = 0;
+       // 여기에 풀이를 입력해주세요.
+       // 함수 생성
+       function addCount() {
+           // 값 증가
+           count++;
+           // 값을 출력
+           $output1.text(count);
+
+           $output2.text("평균수행 시간 : {{exec_time.execute_time__avg|floatformat}}");
+       }
+
+       addCount();
+
+       repeat = setInterval(addCount, 1000);
+	 }
+</script>
+
+<script type="text/javascript">
+
+	$.widget( "app.autocomplete", $.ui.autocomplete, {
+	        
+	        // Which class get's applied to matched text in the menu items.
+	        options: {
+	            highlightClass: "ui-state-highlight"
+	        },
+	        
+	        _renderItem: function( ul, item ) {
+
+	            // Replace the matched text with a custom span. This
+	            // span uses the class found in the "highlightClass" option.
+	            var re = new RegExp( "(" + this.term + ")", "gi" ),
+	                cls = this.options.highlightClass,
+	                template = "<span class='" + cls + "'>$1</span>",
+	                label = item.label.replace( re, template ),
+	                $li = $( "<li/>" ).appendTo( ul );
+	            
+	            // Create and return the custom menu item content.
+	            $( "<a/>" ).attr( "href", "#" )
+	                       .html( label )
+	                       .appendTo( $li );
+	            
+	            return $li;
+	            
+	        }
+    });
+	        
+	
+	$(function() {    
+	        
+	        $("#id_keyword").autocomplete({  
+	        	highlightClass: "bold-text",
+	            source : function( request, response ) {
+							             $.ajax({
+							                    type: 'post',
+							                    url: "{% url 'ajaxSearchKeywordAutoComplete' %}",          
+							                    dataType: "json",
+							                    data: { keyword : $("#id_keyword").val(),
+							                    'csrfmiddlewaretoken': '{{ csrf_token }}' },
+							                    success: function(data) {
+							                        console.log(data)
+							                        response(
+							                            $.map(data, function(item) {
+							                                return {
+							                                    label: item.data,
+							                                    value: item.data
+							                                }
+							                            })
+							                        );
+							                    }
+							               });
+							            },							
+
+
+	            select : function(event, ui) {    //아이템 선택시
+	                console.log(ui.item);
+	            },
+	            focus : function(event, ui) {    //포커스 가면
+	                return false;//한글 에러 잡기용도로 사용됨
+	            },
+	            minLength: 2,// 최소 글자수
+	            autoFocus: true, //첫번째 항목 자동 포커스 기본값 false
+	            classes: {    //잘 모르겠음
+	                "ui-autocomplete": "highlight"
+	            },
+	            delay: 500,    //검색창에 글자 써지고 나서 autocomplete 창 뜰 때 까지 딜레이 시간(ms)
+	//            disabled: true, //자동완성 기능 끄기
+	            position: { my : "right top", at: "right bottom" },    //잘 모르겠음
+	            close : function(event){    //자동완성창 닫아질때 호출
+	                console.log(event);
+	            }
+	        });
+	        
+	    });
+
+	
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+{%endblock%}

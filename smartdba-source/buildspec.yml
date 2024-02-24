@@ -1,0 +1,50 @@
+version: 0.2
+
+    
+phases:
+  install:
+    runtime-versions:
+      docker: 18
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - aws ecr get-login-password --region ${V_REGION_NAME} | docker login --username AWS --password-stdin ${V_ACCOUNT_ID}.dkr.ecr.${V_REGION_NAME}.amazonaws.com
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build --build-arg V_ACCOUNT_ID=${V_ACCOUNT_ID} -t ${V_CONTAINER_NAME}:latest .
+      - docker tag ${V_CONTAINER_NAME}:latest ${V_REPOSITORY_URL}:${IMAGE_TAG} 
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push ${V_REPOSITORY_URL}:${IMAGE_TAG}
+      - |
+        cat script/taskdef.json | sed \
+                              -e "s|V_CONTAINER_NAME|${V_CONTAINER_NAME}|g" \
+                              -e "s|V_TASK_ROLE_ARN|${V_TASK_ROLE_ARN}|g" \
+                              -e "s|V_EXECUTION_ROLE_ARN|${V_EXECUTION_ROLE_ARN}|g" \
+                              -e "s|V_ACCOUNT_ID|${V_ACCOUNT_ID}|g" \
+                              -e "s|V_REGION_NAME|${V_REGION_NAME}|g" \
+                              -e "s|V_LOG_GROUP|${V_LOG_GROUP}|g" \
+                              -e "s|V_FAMILY|${V_FAMILY}|g" \
+                              -e "s|V_HOST_PORT|${V_HOST_PORT}|g" \
+                              -e "s|V_CONTAINER_PORT|${V_CONTAINER_PORT}|g" \
+                              -e "s|V_CPU|${V_CPU}|g" \
+                              -e "s|V_MEMORY|${V_MEMORY}|g" \
+                              -e "s|V_REPOSITORY_URL|${V_REPOSITORY_URL}:${IMAGE_TAG}|g" \
+        > taskdef.json
+
+        - |
+        cat script/appspec.yml  | sed \
+                              -e "s|V_CONTAINER_NAME|${V_CONTAINER_NAME}|g" \
+                              -e "s|V_CONTAINER_PORT|${V_CONTAINER_PORT}|g" \
+        > appspec.yml
+        
+artifacts:
+  files:
+    - appspec.yml
+    - taskdef.json

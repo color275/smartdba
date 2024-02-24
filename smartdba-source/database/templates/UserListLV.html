@@ -1,0 +1,225 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+{% block title %}Smart-계정활성화{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+  <h2>사용자 계정 리스트</h2>
+  <div class="right-wrapper pull-right">
+    <ol class="breadcrumbs">
+      <li>
+        {% if user.is_superuser %}
+          <a href="http://{{ request.get_host }}/admin/database/userlist/" target="blank">
+            <button type="button" class="btn btn-xs btn-success">Admin</button>
+          </a>
+        {% endif %}
+      </li>
+    </ol>&nbsp;&nbsp;&nbsp;&nbsp;
+  </div>
+
+  <style type="text/css">
+    #datatable-default_filter {
+      width:50%;
+      position:relative;
+        float: right;
+    }
+
+    
+  </style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+
+  {% csrf_token %}
+
+
+
+  <header class="panel-heading" style="padding-bottom: 3px">
+
+          <div class="form-group">
+
+              <div class="input-group">
+                <div class="ui-widget">
+                {{form.username}} 
+                </div>
+
+
+                <span class="input-group-btn">
+                  <button type="submit" class="btn btn-lg btn-primary" id="search_button" >Search</button>
+                </span>
+              </div>
+          </div>
+          <div class="pull-right">
+              {{form.oper_cd}}
+              {{form.id_dblist}}
+              {{ form.media }}
+          </div>    
+          <br><br>
+  </header>
+  <br>
+
+
+  <code><b>배치시간 : {{objects.0.mod_dtm}}</b></code>
+  <section class="panel">
+
+
+    <div class="panel-body">        
+      <!-- <table class="table table-bordered table-striped mb-none" id="datatable-details-databaselist"> -->
+      
+      <table class="table table-bordered table-striped mb-none" id="datatable-default" style="width: 100%">
+        <thead>         
+          <tr>
+              <th style="text-align: center;">#</th>
+              <th style="text-align: center;">운영/개발</th>                            
+              <th style="text-align: center;">DB용도</th>
+              <th style="text-align: center;">DBMS</th>
+              <th style="text-align: center;">이름</th>
+              <th style="text-align: center;">팀</th>
+              <th style="text-align: center;">계정명</th>
+              <th style="text-align: center;">소스IP</th>
+              <th style="text-align: center;">사번</th>
+              <th style="text-align: center;">계정상태</th>
+              <th style="text-align: center;">초기화 요청</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for data in objects %}
+              <tr>
+                  <td style="text-align: center;">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                  <td style="text-align: center;">{{data.oper_cd}}</td>
+                  <td style="text-align: center;">{{data.db_use}}</td>
+                  <td style="text-align: center;">{{data.id_dblist.id_dbtype.db_type}}</td>
+                  <td style="text-align: center;"><font color="blue"><b>{{data.id_user_name.first_name}}</b></font></td>                            
+                  <td style="text-align: center;">{{data.id_user_name.last_name}}</td>                            
+                  <td style="text-align: center;"><font color="blue"><b>{{data.username}}</b></font></td>
+                  <td style="text-align: center;">{{data.conn_ip}}</td>
+                  <td style="text-align: center;">{{data.id_user_name.username}}</td>
+                  <td style="text-align: center;"><b>{%if data.status == "1"%}<font color="red">{{data.get_status_display}}</font>{%else%}{{data.get_status_display}}{%endif%}</b></td>
+                  <td style="text-align: center;">                    
+                    {% if data.id_user_name.id == user.id %}                    
+                      {% if data.request_status == "0" %}
+                        <button type="input" name="btn_account_active" value="{{data.id}}" class="btn-xs btn-success" onclick="return confirm('계정 활성화 신청을 하시겠어요?');">요청</button>
+                      {%elif data.request_status == "1"%}
+                        <button type="input" name="btn_account_active" disabled value="{{data.id}}" class="btn-xs btn-danger">신청중</button>
+                      {%endif%}
+                    {% endif %}
+                  </td>              
+
+            </tr>
+          {% endfor %}
+        </tbody>        
+      </table>
+
+      
+
+      {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+      <div class="pull-right">
+        {% if is_paginated %}
+          <nav>
+            <ul class="pagination">
+              {% if page_obj.has_previous %}
+                <li>
+                  <a href="?page={{ page_obj.previous_page_number }}">
+                    <span>Prev</span>
+                  </a>
+                </li>
+              {% else %}
+                <li class="disabled">
+                  <a href="#">
+                    <span>Previous</span>
+                  </a>
+                </li>
+              {% endif %}
+
+              {% for page in page_range %}
+                <li {% if page == page_obj.number %}class="active"{% endif %}>
+                  <a href="?page={{ page }}">{{ page }}</a>
+                </li>
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li>
+                  <a href="?page={{ page_obj.next_page_number }}">
+                    <span>Next</span>
+                  </a>
+                </li>
+              {% else %}
+                <li {% if not page_obj.has_next %}class="disabled"{% endif %}>
+                  <a href="#">
+                    <span>Next</span>
+                  </a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}       
+      </div>
+    </div>
+      
+  </section>
+
+  {% for data in dbms_type %}
+    {{data.id_dbtype__db_type}}({{data.count}})&nbsp;&nbsp;
+  {% endfor %}
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>        
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>      
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js' %}"></script>
+<script src="{% static 'custom/js/cookie.js' %}"></script>
+        
+<script>
+    var table = $('#datatable-default').DataTable({
+            responsive: true,
+            "pageLength": 100,
+            "order": [],
+            "dom" : 'Brt',
+        });
+    
+
+    function geek() { 
+        var doc; 
+        var result = confirm("Press a button!"); 
+        if (result == true) { 
+            doc = "OK was pressed."; 
+        } else { 
+            doc = "Cancel was pressed."; 
+        } 
+        document.getElementById("g").innerHTML = doc; 
+    } 
+</script>
+
+
+
+
+{%endblock%}
+
+
+
+
+

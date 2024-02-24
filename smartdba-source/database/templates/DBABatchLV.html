@@ -1,0 +1,81 @@
+
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}DBA 배치 리스트{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+    <h2>DBA 배치 리스트</h2>
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+
+    {% csrf_token %}
+
+    <section class="panel">
+        <div class="panel-body">
+            <table class="table table-bordered table-striped mb-none csort" id="datatable-default" data-plugin-options='{"searchPlaceholder": "결과 내 검색"}'>
+                <thead>
+                    <tr>
+                        <th style="text-align: center;">#</th>
+                        <th style="text-align: center;">배치명</th>
+                        <th style="text-align: center;">상태</th>
+                        <th style="text-align: center;">시작</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                      <td style="text-align: center;"></td>
+                      <td style="text-align: center;"></td>
+                      <td style="text-align: center;"></td>
+                      <td style="text-align: center;"><button type="input" name="btn_batch" value="click" class="btn-xs btn-success">Start</button></td>
+                  </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
+<!-- end: page -->
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js' %}"></script>
+<script src="{% static 'custom/js/cookie.js' %}"></script>
+
+<script>
+    $('#datatable-default').DataTable({
+            responsive: true,
+            "pageLength": 50,
+            "order": [],
+            // "dom" : 'Brt',
+        });
+</script>
+
+
+
+
+{%endblock%}
+
+
+

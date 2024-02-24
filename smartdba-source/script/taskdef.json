@@ -1,0 +1,49 @@
+{
+    "executionRoleArn": "V_EXECUTION_ROLE_ARN",
+    "taskRoleArn": "V_TASK_ROLE_ARN",
+    "containerDefinitions": [
+      {
+        "name": "V_CONTAINER_NAME",
+        "image": "V_REPOSITORY_URL",
+        "essential": true,
+        "portMappings": [
+          {
+            "hostPort": V_HOST_PORT,
+            "containerPort": V_CONTAINER_PORT,
+            "protocol": "tcp"
+          },
+          {
+          "hostPort": 22,
+          "containerPort": 22,
+          "protocol": "tcp"
+          }
+        ],
+        "entryPoint": ["./docker-entrypoint.sh"],
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-region": "V_REGION_NAME",
+            "awslogs-stream-prefix": "log",
+            "awslogs-group": "V_LOG_GROUP"
+          }
+        },
+        "healthCheck": {
+          "retries": 3,
+          "command": [
+              "CMD-SHELL",
+              "echo hi || exit 1"
+          ],
+          "timeout": 5,
+          "interval": 30,
+          "startPeriod": null
+        }
+      }
+    ],
+    "requiresCompatibilities": [
+      "FARGATE"
+    ],
+    "networkMode": "awsvpc",
+    "cpu": "V_CPU",
+    "memory": "V_MEMORY",
+    "family": "V_FAMILY"
+  }

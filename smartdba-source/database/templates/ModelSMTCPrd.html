@@ -1,0 +1,79 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+    .imgScrollBox {
+      overflow:scroll;
+      width:100%; padding-bottom:20px;      
+      border-style:none;
+      height:700px;
+
+      scrollbar-face-color:#FFFFFF;
+      scrollbar-3dlight-color:#FFFFFF;
+      scrollbar-highlight-color:#FFFFFF;
+      scrollbar-shadow-color:#000000;
+      scrollbar-darkshadow-color:#FFFFFF;
+      scrollbar-arrow-color:#000000;
+      scrollbar-track-color:#FFFFFF; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2> SMTC 상품 모델(흰색)</h2>
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}
+	<iframe style="width:100vw; height: 100vh" src="{% static 'custom/img/prd_0826_8_1.html' %}" frameborder="0" allowfullscreen></iframe>
+	<!-- <div class="imgScrollBox"><img src="{% static 'custom/img/SMTC_PRD.png' %}" style="width: 130%"></div> -->
+
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+
+{%endblock%}
+
+
+
+
+
+

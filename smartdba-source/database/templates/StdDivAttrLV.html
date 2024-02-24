@@ -1,0 +1,730 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load database_extras %}
+
+
+
+{% block title %}Smart-용어{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        /*th, td { white-space: nowrap; }*/
+        .td_fix_center {
+        	white-space: nowrap;
+        	text-align: center;
+        	vertical-align: middle;        	
+        }
+        .td_fix {
+        	white-space: nowrap;        
+        	vertical-align: middle;        	
+        }
+
+        select {
+        			width: 150px; /* 원하는 너비설정 */
+        			height:35px;
+        			padding: .1em .1em;
+        		}
+
+
+    </style>
+</head>
+
+<head>
+    <style type="text/css">
+        /*th, td { white-space: nowrap; }*/
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>표준 용어 리스트</h2>
+	<div class="right-wrapper pull-right">
+		<ol class="breadcrumbs">
+			<li>				
+				{% if user.is_superuser %}
+				  <a href="http://{{ request.get_host }}/admin/database/stdattr/" target="blank">&nbsp;
+				    <button type="button" class="btn btn-xs btn-success">Admin</button>
+				  </a>
+				{% endif %}
+			</li>
+		</ol>&nbsp;&nbsp;&nbsp;&nbsp;
+	</div>
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}
+  <div class="alert alert-info">
+  	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+  	<strong>상품광고비용, 취급액달성여부, 적용시작시간</strong> 등 단어와 도메인의 조합된 용어를 조회/신청하는 화면입니다. 자세한 설명은 <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30118293" target="blank" class="alert-link">[도움말]</a> 클릭하세요
+  </div>
+
+  <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30143440" target="_blank"><b><code>[가이드] 의도한대로 용어가 구분되지 않을 때</code></b></a>
+	<section class="panel">
+		<header class="panel-heading">
+			<h2 class="panel-title">한글 용어를 입력하세요 ( 여러개는 공백으로 구분 )</h2>
+		</header>
+		<div class="panel-body">
+			<form class="form-horizontal" action="#">
+				<div class="form-group">
+
+					<div class="col-md-11">
+						<div class="form-inline">
+							<div class="form-group">
+								<input class="form-control" style="display: none">
+								<input class="form-control" id="txt_div_attr" name="txt_div_attr" style='width:300px' placeholder="상품코드, 주문번호" required>
+
+
+
+								<button id="btn_div_attr" type="button" class="btn btn-primary">용어 조회</button>
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+	</section>
+	<div id="div_div_attr" style="display: none;">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">용어 사용 가능 여부 검사</h2>
+			</header>
+			<div class="panel-body">
+				<div class="form-group">
+					<div id="result_msg" class="col-md-11 text-success h5" style="font-weight:bold"></div>
+					<div id="result_tab" class="col-md-11">
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+	<div id="div_result_select" style="display: none">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">기 등록된 용어</h2>
+			</header>
+			<div class="panel-body">
+				<div id="result_select"></div>
+			</div>
+		</section>
+	</div>
+
+	{% if req_attr %}
+	<section class="panel">
+		<header class="panel-heading">
+			<h2 class="panel-title">현재 신청 중인 용어</h2>
+		</header>
+		<div class="panel-body">
+			<table class="table table-bordered table-striped mb-none csort" id="datatable-default1">
+                <thead>
+                    <tr>
+                        <th class="td_fix_center">한글명</th>
+                        <th class="td_fix_center">영문명</th>
+                        <th class="td_fix_center">데이터타입<br>ORACLE</th>
+                        <th class="td_fix_center">데이터타입<br>MYSQL</th>
+                        <th class="td_fix_center">행봇/CSR</th>
+                        <th class="td_fix_center">신청자</th>
+                        <th class="td_fix_center">신청일</th>
+                        <th class="td_fix_center">승인<br>여부</th>
+                        <th class="td_fix_center">반려사유</th>
+                        <th class="td_fix_center">취소</th>
+                        {% if request.user.is_superuser %}
+                        <th class="td_fix_center">승인/반려</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in req_attr %}
+                        <tr>
+                            <td class="td_fix">{{data.std_attr_kor}}</td>
+                            <td class="td_fix">{{data.std_attr_eng}}</td>
+                            <td class="td_fix_center">{% f_get_datatype data.id 'ORACLE' as result %} {{result}}</td>
+                            <td class="td_fix_center">{% f_get_datatype data.id 'MYSQL' as result %} {{result}}</td>
+                            <td class="td_fix_center">{{data.csr_no|default_if_none:"--"}}</td>
+                            <td class="td_fix_center">{{data.id_reg_user.first_name}}</td>
+                            <td class="td_fix_center">{{data.reg_dtm|date:"m/d"}}</td>
+                            <td class="td_fix_center"><font color=red><b>{{data.get_accept_yn_display}}</b></font></td>
+                            <td>{{data.reject_exp|default_if_none:"--"}}</td>
+                            <td class="td_fix_center">
+                            	{% if request.user.id == data.id_reg_user.id %}
+                            	<a class="btn-sm btn btn-default" onclick="f_req_cancel('{{data.id}}')">취소</a>
+                            	{% endif %}
+                           	</td>
+                           	{% if request.user.is_superuser %}
+                           	<td class="td_fix_center">
+                           		{% if data.accept_yn == 1 %}
+                            	<a href="#btn_req_accept_modal" class="modal-with-form btn-xs btn btn-success" onclick="f_save_req_id('{{data.id}}')">Click</a>
+                            	{% endif %}
+                           	</td class="td_fix_center">
+                           	{% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+		</div>
+	</section>
+	<div id="div_req_accept" style="display: none"></div>
+	<div id="btn_req_accept_modal" class="modal-block modal-block-primary mfp-hide">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">승인합니까?</h2>
+			</header>
+			<div class="panel-body">
+				<form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate">
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Comment 또는<br>반려사유</label>
+						<div class="col-sm-9">
+							<textarea rows="5" class="form-control" id = "txt_aceept" name = "txt_aceept" placeholder="승인합니다 / .....이유로 반려합니다." ></textarea>
+						</div>
+					</div>
+					<br>
+				</form>
+			</div>
+			<footer class="panel-footer">
+				<div class="row">
+					<div class="col-md-12 text-right">
+						<button id="btn_aceept_ok" type="button" class="btn btn-primary">승인</button>
+						<button id="btn_aceept_reject" type="button" class="btn btn-danger">반려</button>
+						<button id="btn_aceept_no" class="btn btn-default modal-dismiss">취소</button>
+					</div>
+				</div>
+			</footer>
+		</section>
+	</div>
+	{% endif %}
+
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	$(document).ready(function() {
+
+
+
+	});
+
+
+
+
+	$("#btn_aceept_ok").click(function(){
+
+		req_id = $("#div_req_accept").html();
+		var comment = $("#txt_aceept").val()
+
+		
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'comment' : comment,
+	      		  'std_div' : 2, // 용어
+	      		  'req_div' : 0, // 승인
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	$("#btn_aceept_reject").click(function(){
+
+		req_id = $("#div_req_accept").html();
+		var comment = $("#txt_aceept").val()
+
+		if ( comment == "" ) {
+			alert("반려 메시지를 꼭 작성해주세요")
+			return
+		}
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'comment' : comment,
+	      		  'std_div' : 2, // 용어
+	      		  'req_div' : 2, // 반려
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	function f_save_req_id(req_id) {
+
+		$("#div_req_accept").html(req_id);
+		document.getElementById("txt_aceept").value = ""
+	}
+
+
+
+	function f_req_cancel(req_id) {
+		var comment = $("#txt_aceept").val()
+
+		if ( confirm('신청한 용어를 취소하겠습니까?') == false )
+			return
+
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'std_div' : 2, // 용어
+	      		  'req_div' : 1, // 취소
+	      		  'comment' : comment,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	};
+
+
+
+	$("#txt_div_attr").keyup(function(event) {
+	    if (event.keyCode === 13) {
+		    	$("#btn_div_attr").click();
+		    }
+	});
+
+
+
+	$("#btn_request_new_attr").click(function(){
+		console.log("btn_request_new_attr")
+	})
+
+	$("#btn_div_attr").click(function(){
+
+		var attr = $("#txt_div_attr").val()
+
+		// var sel = document.getElementById('id_id_dblist');
+		// var opt = sel.options[sel.selectedIndex];
+		// id_dblist = opt.value
+
+		if (attr == "") {
+			return;
+		}
+		// if (id_dblist == "") {
+		// 	return;
+		// }
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxDivAttr' %}",
+	      data: { 'attr' : attr,
+	      		  // 'id_dblist' : id_dblist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+
+
+	            $("#result_select").html('<table width="100%" style="white-space: nowrap;" id="datatable-default" class="table table-bordered table-striped mb-none csort" ><thead><tr><th>한글명</th><th>영문명</th><th>데이터타입(ORACLE)</th><th>데이터타입(MYSQL)</th><th>인포타입</th><th>설명</th><th>등록자</th></tr></thead></table>')
+
+	            const localDataTable = $('#datatable-default').DataTable({
+				            responsive: true,
+				            // "scrollX": true,
+				            // "scrollY": "200px",
+							"scrollCollapse": true,
+				            "pageLength": 100,
+				            "bFilter": true,
+				            "paging": true,
+				            "order" : false,
+				            data: json.attr_data
+
+				});
+
+				$("#div_result_select").show()
+
+
+
+	      		var step;
+
+      		    var tableHeaders = ""
+      		    tableHeaders += "<th style='text-align: center;vertical-align: middle'>한글명</th>";
+      		    tableHeaders += "<th style='text-align: center;vertical-align: middle'>영문명</th>";
+	      		tableHeaders += "<th style='text-align: center;vertical-align: middle;width:120px'>데이터타입 선택 <font color='red'>(사용빈도 높은 것 선택)</font></th>";
+	      		// tableHeaders += "<th style='text-align: center;vertical-align: middle;width:100px'>MYSQL<br>Data Type</th>";
+	      		tableHeaders += "<th style='text-align: center;vertical-align: middle;width:100px'>체크 결과</th>";
+	      		tableHeaders += "<th style='text-align: center;vertical-align: middle;width:100px'>사유</th>";
+	      		tableHeaders += "<th style='text-align: center;vertical-align: middle;width:100px'>구분</th>";
+	      		$.each(json.lcnt, function(i, val){
+	      		    tableHeaders += "<th style='text-align: center;vertical-align: middle'>" + val + "번째</th>";
+	      		});
+
+	      		// DBMS 추가 시
+
+	      		var tableTotal = ""
+
+	      		var tableStart = '<table class="table table-bordered" >' +
+  					     			'<thead>' + tableHeaders + '</thead>'
+  				var tableEnd = '</table>'
+  				var tableMid = ""
+
+	      		for ( step = 0; step < json.total_attr; step ++ ) {
+
+		      		kor_i = 0
+		      		eng_i = 0
+		      		eng_length = 0
+
+	      			
+
+		      		var row_header = ""
+		      		row_header += "<td rowspan='2' style='text-align: center;vertical-align: middle;'><b>"+json.list_attr[step]+"</b></td>";
+		      		row_header += "<td rowspan='2' style='text-align: center;vertical-align: middle;'><b>"+json.eng_attr_name[step]+"</b></td>";
+
+		      		// 영문 용어 길이 체크
+		      		eng_length = json.eng_attr_name[step].length
+
+		      		var tableKorData="<td style='text-align: center;vertical-align: middle;'><b>한글</b></td>";
+		      		var tableEngData="<td style='text-align: center;vertical-align: middle;'><b>영문</b></td>";
+
+		      		$.each(json.lkor[step], function(i, val){
+		      		    tableKorData += "<td style='text-align: center;vertical-align: middle;'>" + val + "</td>";
+		      		    kor_i += 1
+		      		});
+
+		      		while ( kor_i < json.max_length ) {
+
+		      			tableKorData += "<td style='text-align: center;vertical-align: middle;'></td>";
+		      			kor_i += 1;
+		      		}
+
+		      		$.each(json.leng[step], function(i, val){
+		      		    tableEngData += "<td style='text-align: center;vertical-align: middle;'>" + val + "</td>";
+		      		    eng_i += 1;
+		      		});
+
+		      		while ( eng_i < json.max_length ) {
+
+		      			tableEngData += "<td style='text-align: center;vertical-align: middle;'></td>";
+		      			eng_i += 1;
+		      		}
+
+
+		      		first_domain_name = ""
+		      		code_guide = ""
+		      		if ( json.l_attr_find[step] == false ) {
+			      		// DBMS 추가 시
+			      		// var domain_datatype ='<td rowspan="2" style="text-align: center;vertical-align: middle"><b>'+json.domain_datatype[step]+'</b></td>';
+			      		var domain_datatype ='<td rowspan="2" style="vertical-align: middle"><b> \
+			      										<select style="width:300px;" id="sel_change'+step+'">'
+
+			      		
+			      		$.each(json.domain[step], function(i, val){
+			      			
+			      			if ( i == 0 )
+			      			{
+				      			domain_datatype += '<option value="'+val[0]+'" selected>'+val[1]+' ( 사용빈도:'+val[2]+' )'+'</option>'
+				      			first_domain_name = val[1].split('_')[0]
+				      			last_char = first_domain_name.charAt(first_domain_name.length-2) + first_domain_name.charAt(first_domain_name.length-1)
+				      			if ( last_char == '코드' || last_char == '번호' )
+				      			{
+				      				code_guide = "<font size='2' color=blue><b>\""+first_domain_name+"\"" + " 와 FK관계 또는 동일코드가<br> 아닐 경우 도메인에서 신청하세요</b></font>"
+				      			}
+
+			      			}
+			      			else
+			      			{
+				      			domain_datatype += '<option value="'+val[0]+'" >'+val[1]+' ( 사용빈도:'+val[2]+' )'+'</option>'
+			      			}
+
+			      		});
+
+						domain_datatype += '</select> \
+			      									 </b> \
+			      									 ' + code_guide +
+			      									 '</td>';
+
+					}
+					else {
+						var domain_datatype ='<td rowspan="2" style="text-align: center; width:300px; vertical-align: middle"><b>' + json.exact_datatype + '</b></td>'
+					}
+
+
+
+		      		// var mysql_domain_datatype  ='<td rowspan="2" style="text-align: center;vertical-align: middle"><b>'+json.mysql_domain_datatype[step] +'</b></td>';
+
+					var result = ""
+					var reason = ""
+					var success_flag = 0
+					if ( json.l_attr_find[step] == true )
+					{
+						result = "OK<br><font size=2>컬럼으로 바로 사용 가능</font>"
+						success_flag = 1
+					}
+					else if ( json.domain_flag[step] == true && json.lkor[step].length == 1 ) {
+						result = "사용불가"
+						reason = "용어가 너무 짧습니다. 상세한 용어명으로 명명해주세요"
+					}
+					else if ( json.domain_flag[step] == true ) {
+						if ( json.word_find_flag[step] == true )
+						{							
+							if ( eng_length > 30 )
+							{
+								result = "사용불가"
+								reason = "영문명 길이는 30자가 넘을 수 없습니다. (현재 " + eng_length + "자)"
+							}
+							else
+							{								
+								result = '<button id="btn_request_new_attr'+step+'" type="button" class="btn btn-xs btn-primary" onclick=send_to_modal('+step+',"'+json.list_attr[step]+'","'+json.eng_attr_name[step]+'",'+kor_i+')>사용 신청</button>'
+								success_flag = 1								
+							}
+
+						}
+						else
+						{
+							result = "사용불가"
+							reason = "일부 단어가 없습니다."
+						}
+						if (json.last_num_flag[step] == false ) {
+							result = "사용불가"
+							reason = "용어의 마지막 숫자는 20을 넘을 수 없습니다."
+						}
+					}
+					else {
+						if ( json.word_find_flag[step] == true )
+						{
+							result = "사용불가"
+							reason = "사용 가능한 도메인이 없습니다."
+						}
+						else
+						{
+							result = "사용불가"
+							reason = "사용 가능한 단어, 도메인이 없습니다."
+						}
+
+						if (json.last_num_flag[step] == false ) {
+							result = "사용불가"
+							reason = "용어의 마지막 숫자는 20을 넘을 수 없습니다."
+						}
+					}
+
+		      		if ( success_flag == 1 )
+			      		result  ='<td rowspan="2" style="background-color:#00FF00;text-align: center;vertical-align: middle"><b><font color="black">'+result +'</font></b></td>';
+			      	else
+			      		result  ='<td rowspan="2" style="background-color:#FF0000;text-align: center;vertical-align: middle"><b><font color="white">'+result +'</font></b></td>';
+		      		reason  ='<td rowspan="2" style="text-align: center;vertical-align: middle"><b>'+reason +'</b></td>';
+
+
+		      		tableMid += '<tr>' +
+		      						row_header +
+									// DBMS 추가 시
+									domain_datatype +
+									result +
+									reason +
+									tableKorData +
+								'</tr>' +
+								'<tr>' +
+									tableEngData +
+								'</tr>'
+		      	}
+		      	$("#result_tab").html( tableStart + tableMid + tableEnd )
+
+		      	$("#div_div_attr").show();
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	function send_to_modal(step,kor,eng,word_cnt){
+
+		
+		if ( word_cnt <= 2 ){			
+			if(confirm("용어가 너무 짧습니다. 구체적으로 입력해주세요.\n" +
+				"포괄적인 의미의 용어인 경우 반려될 수 있습니다.\n\n" +
+				"ex) 시작일시 => 보험상담시작일시\n" +
+				"ex) 매출금액 => 목표회계매출금액\n" +
+				"ex) 제목명 => VIP시나리오액션제목명\n" +
+				"ex) 입력코드 => 상품개인화직접입력코드\n" 
+				) == false) {
+			    return false;
+			}
+		}
+
+
+		var sel = document.getElementById('sel_change'+step);
+		var opt = sel.options[sel.selectedIndex];
+		id_stddomain = opt.value
+
+		var csr_no = prompt('관련 행봇/CSR 번호를 입력하세요', 'HANGBOT-');
+
+		if (csr_no == null)
+		{
+			return false;
+		}
+
+		if (csr_no == "")
+		{
+			alert("행봇/CSR 번호는 필수 항목입니다.")
+			return false;
+		}
+
+		// if(confirm("["+kor+"] 용어를 사용 신청하시겠습니까?") == false) {
+		//     return false;
+		// }
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestNewAttr' %}",
+	      data: {
+	      		  'id_stddomain':id_stddomain,
+	      		  'kor':kor,
+	      		  'eng':eng,
+	      		  'csr_no':csr_no,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      	
+	      	if (json.error_msg != "")
+	      		alert(json.error_msg)
+	      	else
+	      	  {
+		      	alert("완료되었습니다.")
+		      	$("#btn_request_new_attr"+step).text('신청중');
+		      	$("#btn_request_new_attr"+step).addClass("cbtn btn-xs btn-warning");
+		      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+
+
+	}
+
+
+
+
+
+
+</script>
+
+{%endblock%}
+
+
+

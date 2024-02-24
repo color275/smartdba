@@ -1,0 +1,2583 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+
+        select {
+        			width: 150px; /* 원하는 너비설정 */
+        			height:22px;
+        			padding: .1em .1em;
+        		}
+        input {
+        			line-height: 25px;
+        		}
+
+        #datatable-editable td, #datatable-editable th {
+            padding: 1rem;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .div_error {
+        	 font-weight: bold ;
+        	 font-style: italic;
+        	 color : red;
+        }
+        .div_warning {
+        	 font-weight: bold ;
+        	 font-style: italic;
+        	 color : blue;
+        }
+
+
+
+
+
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'custom/css/datatables.min.css' %}"></script>
+</head>
+
+<header class="page-header">
+	<!-- updateupdate -->
+	<h2>Object 변경 관리 - 수정</h2>
+	<div class="right-wrapper pull-right">
+	  <ol class="breadcrumbs">
+	    <li>
+	      <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=23920620" target="blank">
+	        <button type="button" class="btn btn-xs btn-success">도움말</button>
+	      </a>
+	    </li>
+	  </ol>&nbsp;&nbsp;&nbsp;&nbsp;
+	</div>
+</header>
+
+
+<!-- start: page -->
+<form method="POST" id="MyForm" action="#"  >
+
+	{% csrf_token %}
+
+
+	<div id="div_id_tablelist" style="display: none"></div>
+	<div id="div_id_dblist" style="display: none"></div>
+	<div id="div_db_type" style="display: none"></div>
+
+
+
+	{{form.media}}
+
+        <div class="alert alert-info">
+			<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+			<strong>도움말 링크</strong><br>
+            <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=38574932" target="blank"><font color=black># 테이블 분류어</font></a> : 테이블 논리명(한글)을 통해 데이터의 성격을 사전에 알 수 있도록 정의된 테이블 명명 규칙<br>
+            <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30119799" target="blank"><font color=black># 승인자</font></a> : 테이블/도메인 별 담당자 정보<br>
+			<a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30120662" target="blank"><font color=black># 권한</font></a> : 테이블 별 권한 매핑 정보
+
+		</div>
+
+		<div class="pull-right">
+			<!-- updateupdate -->
+			<a id="saveMetaReq" class="btn btn-primary">수정 완료</i></a>
+			<!-- updateupdate -->
+			 <a type="button" href="{% url 'MetaReqListLV' id_metareq %}" class="btn btn-primary">이전화면으로</a>
+			<a href="{% url 'MetaReqLV' %}" class="btn btn-primary">목록으로</a>
+		</div>
+
+		<br><br>
+
+		<div class="panel-body">
+
+
+
+			<div class="form-inline">
+				{{form.title}}
+				{{form.csr}}
+			</div>
+			<div id="err_title" class="div_error"></div>
+			<br>
+
+			<div class="form-inline">
+				{{form.obj_class}}
+				{{form.obj_new}}
+				{{form.id_dblist}}
+				{{form.id_pl_dev}}
+				<div id="err_id_dblist" class="div_error">우선적으로 위의 입력항목을 먼저 선택해주세요</div>
+			</div>
+
+			<br>
+
+			{{form.req_contents}}
+			<div id="err_req_contents" class="div_error"></div>
+
+			<br>
+
+			<div id="div_table">
+
+
+				<div class="pull-right">
+			    	<div class="form-inline">
+						{{form.owner}}
+						{{form.id_tablelist}}
+
+						<a id="btn_view_column" class="btn-sm btn btn-success">컬럼 보기</a>
+						<a id="addToTable" class="btn-sm btn btn-success">신규 컬럼 추가</a>
+						<a id="checkToColumn" class="btn-sm btn btn-success">전체 표준적용</a>
+						<a id="btn_retry" class="btn-sm btn btn-warning">다시하기</a>
+
+					</div>
+				</div>
+				<br><br>
+
+
+				<div class="pull-right">
+			    	<div class="form-inline">
+						{{form.table_name}}
+						{{form.table_comments}}
+						{{form.storage_cycle}}
+						{{form.storage_cycle_column}}
+						<a id="btn_handwork" href="#btn_handwork_modal" class="modal-with-form btn-sm btn btn-default">텍스트입력</a>
+						<div id="btn_handwork_modal" class="modal-block modal-block-primary mfp-hide">
+							<section class="panel">
+								<header class="panel-heading">
+									<h2 class="panel-title">텍스트로 입력하여 여러 컬럼 정보를 한번에 입력합니다<div id="div_ok_title"></div></h2>
+								</header>
+								<div class="panel-body">
+									<b>사용방법 : 띄어쓰기로 구분하여 한글명, 영문명, 데이터타입을 입력( 여러개는 엔터로 구분 )</b><br>
+									<ul>
+									<li>
+									case-1. 컬럼한글명 컬럼영문명 데이터타입<br>
+									</li>
+									    ex) 제휴특판제한여부<font color="blue">(공백)</font>ALIA_SPCLSAL_LIMIT_YN<font color="blue">(공백)</font>VARCHAR2(1)<br>
+									<li>
+									case-2. 컬럼한글명 컬럼영문명<br>
+									</li>
+									    ex) 제휴특판제한여부<font color="blue">(공백)</font>ALIA_SPCLSAL_LIMIT_YN<br>
+									<li>
+									case-3. 컬럼한글명<br>
+									</li>
+									    ex) 제휴특판제한여부<br>
+									</ul>
+									<br>
+									<b><font color="red">주의 : 한글명, 영문명, 데이터타입에 공백이 들어가면 안됩니다!</b></font>
+
+									<div class="modal-wrapper">
+										<textarea id="txt_handwork" class="form-control" style="width:100%" rows="10" placeholder="상품코드  PRD_CD  VARCHAR2(15)
+주문번호  ORD_NO  NUMBER(15)
+지정배송택배사코드  APNT_DLV_DLVS_CO_CD  VARCHAR2(2)"></textarea>
+									</div>
+									<b><font color=red><div id="div_modal_error"></div></font></b>
+								</div>
+								<footer class="panel-footer">
+									<div class="row">
+										<div class="col-md-12 text-right">
+											<button id="btn_aceept_ok" type="button" class="btn btn-primary">입력</button>
+											<button id="btn_aceept_no" class="btn btn-default modal-dismiss">취소</button>
+										</div>
+									</div>
+								</footer>
+							</section>
+						</div>
+						{{form.id_domainanddblist}}
+
+					</div>
+					<div class="form-inline">
+
+
+					</div>
+				</div>
+				<div class="pull-left">
+					<div id="err_table_name" class="div_error"></div>
+				</div>
+
+
+
+				<br><br>
+				<div id="err_datatable_lengh" class="div_error"></div>
+				<table class="table table-bordered table-striped mb-none" id="datatable-editable">
+					<thead>
+						<tr>
+							<th style="text-align: center;">구분</th>
+							<th style="text-align: center;">순서</th>
+							<th style="text-align: center;">컬럼<br>한글명<font color="red">(*)</font></th>
+							<th style="text-align: center;">PK</th>
+							<th style="text-align: center;">NOT<br>NULL</th>
+							<th style="text-align: center;">Default</th>
+							<th style="text-align: center;">컬럼<br>영문명<font color="red">(*)</font></th>
+							<th style="text-align: center;">DataType<font color="red">(*)</font></th>
+							<th style="text-align: center;">신규/변경<font color="red">(*)</font></th>
+							<th style="text-align: center;">FK<br>db.tab.col</th>
+							<th style="text-align: center;">개인정보</th>
+							<th style="text-align: center;width: 150px">Action</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+			<div id="div_script" style="display: none">
+				<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_sql_code" name="text_sql" >/* 반영 할 Script를 입력해주세요 */
+</textarea></pre>
+			</div>
+			<div id="err_script" class="div_error"></div>
+			<div id="div_grant_msg" class="pull-right">
+
+    		</div>
+
+		<a id="btn_change_row" href="#modal_change_row" class="modal-with-form btn-sm btn btn-default" style="display: none"></a>
+
+		<div id="modal_change_row" class="modal-block modal-block-primary mfp-hide">
+			<section class="panel">
+				<header class="panel-heading">
+					<h1 class="panel-title">컬럼 수정</h1>
+				</header>
+				<div class="panel-body">
+					<!-- <form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate"> -->
+
+						<font color=blue><b>표준컬럼인 경우 "컬럼 한글명"만 입력해도 됩니다.</b></font>
+						<div id="modal_column_no" style="display: none"></div>
+						<div class="form-group mt-lg">
+						<div class="form-group">
+							<label class="col-sm-3 control-label"><b>컬럼 한글명<font color="red">(*)</font></b></label>
+							<div class="col-sm-9">
+								<input class="form-control" id="modal_comments" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">PK</label>
+							<div class="col-sm-9">
+								<select id="modal_pk_yn" name="modal_pk_yn" class="form-control" style="width:100px;"> \
+									<option value='N'>N</option> \
+									<option value='Y'>Y</option> \
+								</select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">NOT NULL</label>
+							<div class="col-sm-9">
+								<select id="modal_not_null" name="modal_not_null" class="form-control" style="width:100px;"> \
+									<option value='N'>N</option> \
+									<option value='Y'>Y</option> \
+								</select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">Default</label>
+							<div class="col-sm-9">
+								<input class="form-control" id="modal_default" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">컬럼 영문명</label>
+							<div class="col-sm-9">
+								<input class="form-control" id="modal_column_name" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">DataType</label>
+							<div class="col-sm-9">
+								<input class="form-control" id="modal_data_type" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">개인정보 보유 여부</label>
+							<div class="col-sm-9">
+								<select id="modal_secu_yn" name="modal_secu_yn" class="form-control" style="width:100px;"> \
+									<option value=''></option> \
+									<option value='개인정보'>개인정보</option> \
+								</select>
+							</div>
+						</div>
+
+						<br>
+					<!-- </form> -->
+				</div>
+				<footer class="panel-footer">
+					<div class="row">
+						<div class="col-md-12 text-right">
+							<button id="btn_change_ok" type="button" class="btn btn-primary">입력</button>
+							<button id="btn_change_no" class="btn btn-default modal-dismiss">취소</button>
+						</div>
+					</div>
+				</footer>
+			</section>
+		</div>
+
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<!-- <script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script> -->
+
+<script src="{% static 'custom/js/datatables.min.js' %}"></script>
+
+
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js' %}"></script>
+<script src="{% static 'assets/javascripts/tables/examples.datatables.editable.js' %}"></script>
+
+<script>
+	let EditableTable;
+
+	$("#btn_aceept_ok").click(function(){
+		var script = $("#txt_handwork").val()
+
+
+		if ( script == "" ) {
+			alert("컬럼정보를 입력해주세요")
+			return;
+		}
+
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaHandWork' %}",
+	      data: { 'script' : script,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if ( json.error_yn == "N"){
+
+		      		var result = confirm("기존 컬럼 정보가 모두 초기화되고 입력된 정보로 갱신 됩니다.");
+
+		      		if (result) {
+			      		EditableTable.clear();
+
+			      		$.each(json.data, function(i, val){
+			      		   EditableTable.rowLoad(
+			      		   						'신규',
+			      		   						parseInt(val[0]),     // column_id
+			      		   						 val[1], // comments
+			      		   						 'N',   // pk_yn
+			      		   						 'N',   // not null
+			      		   						 '',    // data_default
+			      		   						 val[2],   // column_name
+			      		   						 val[3],    // data_type
+			      		   						 ''    // secu_yn
+			      		   						 )
+			      		});
+			      		$("#btn_aceept_no").click();
+			      	}
+			      }
+			    else {
+			    	$("#div_modal_error").html("오류 : " + json.error_msg)
+			    }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+
+
+
+
+	document.querySelector('select[name="id_dblist"]').onchange=function() {
+
+
+		$('.div_error').html("");
+
+		var sel = document.getElementById('id_id_pl_dev');
+		var opt = sel.options[sel.selectedIndex];
+		id_pl_dev = opt.value
+
+		var sel = document.getElementById('id_id_dblist');
+		var opt = sel.options[sel.selectedIndex];
+		id_dblist = opt.value
+
+		var sel = document.getElementById('id_obj_class');
+		var opt = sel.options[sel.selectedIndex];
+		obj_class = opt.value
+
+		var sel = document.getElementById('id_obj_new');
+		var opt = sel.options[sel.selectedIndex];
+		obj_new = opt.value
+
+		// $("#div_db_type").html(json.id_dbtype)
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxGetDBMSCase' %}",
+	      // url: "{% url 'ajaxMetaRegShowColumn' %}",
+	      data: { 'id_dblist' : id_dblist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      		$("#div_db_type").html(json.id_dbtype)
+
+	      		if ( id_dblist != "" && obj_class != "" && obj_new != "" && id_pl_dev != "") {
+		      		$('#btn_view_column').attr('disabled', false);
+  		      		if (obj_new != 1)
+  		      		{
+  			      		$('#addToTable').attr('disabled', false);
+  		      		}
+		      		$('#btn_handwork').attr('disabled', false);
+		      		$('#checkToColumn').attr('disabled', false);
+		      	}
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	};
+
+	document.querySelector('select[name="owner"]').onchange=function() {
+	};
+
+	document.querySelector('select[name="id_tablelist"]').onchange=function() {
+
+		$('.div_error').html("");
+
+		var sel = document.getElementById('id_id_tablelist');
+		var opt = sel.options[sel.selectedIndex];
+		id_tablelist = opt.value
+
+
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxGetDupTable' %}",
+	      data: { 'id_tablelist' : id_tablelist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.err_message != "")
+	      		{
+	      			$("#err_table_name").html(json.err_message)
+	      			$('#btn_view_column').attr('disabled', true);
+	      			$('#addToTable').attr('disabled', true);
+	      			$('#btn_handwork').attr('disabled', true);
+		      		$('#checkToColumn').attr('disabled', true);
+	      		}
+	      		else
+	      		{
+	      			$("#err_table_name").html("")
+	      			$('#btn_view_column').attr('disabled', false);
+
+		      		if (obj_new != 1)
+		      		{
+			      		$('#addToTable').attr('disabled', false);
+		      		}
+
+		      		$('#btn_handwork').attr('disabled', false);
+		      		$('#checkToColumn').attr('disabled', false);
+		      	}
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	};
+
+	document.querySelector('select[name="id_pl_dev"]').onchange=function() {
+
+		$('.div_error').html("");
+
+
+		var sel = document.getElementById('id_id_pl_dev');
+		var opt = sel.options[sel.selectedIndex];
+		id_pl_dev = opt.value
+
+		var sel = document.getElementById('id_id_dblist');
+		var opt = sel.options[sel.selectedIndex];
+		id_dblist = opt.value
+
+		var sel = document.getElementById('id_obj_class');
+		var opt = sel.options[sel.selectedIndex];
+		obj_class = opt.value
+
+		var sel = document.getElementById('id_obj_new');
+		var opt = sel.options[sel.selectedIndex];
+		obj_new = opt.value
+
+
+  		if ( id_dblist != "" && obj_class != "" && obj_new != "" && id_pl_dev != "") {
+      		$('#btn_view_column').attr('disabled', false);
+      		if (obj_new != 1)
+      		{
+	      		$('#addToTable').attr('disabled', false);
+      		}
+      		$('#btn_handwork').attr('disabled', false);
+      		$('#checkToColumn').attr('disabled', false);
+      	}
+
+	};
+
+
+	$("#id_obj_class").change(function(){
+
+		$('.div_error').html("");
+
+		var dt = window.dt;
+
+		var data = dt
+		    .data();
+
+		if  ( data.length > 0 ) {
+			var result = confirm("변경 시 아래 입력 된 컬럼 정보가 모두 초기화 됩니다.");
+			if(result){
+				dt.clear();
+				dt.draw();
+			}else{
+
+				$("#id_obj_class").val(before_id_obj_class);
+			    return;
+			}
+
+		}
+
+	    var select_val =  $(this).val();
+
+	    before_id_obj_class =  select_val
+
+	    if ( select_val >= 3 ) {
+	    	jQuery('#div_table').hide();
+	    	jQuery('#div_script').show();
+	    }
+	    else {
+	    	jQuery('#div_table').show();
+	    	jQuery('#div_script').hide();
+	    }
+
+
+
+	    sql_text = editor_select.getValue()
+
+
+		// ('1', 'TABLE(표준)'),
+		// ('2', 'TABLE(비표준)'),
+		// ('3', 'INDEX'),
+		// ('4', '권한'),
+		// ('5', 'PROCEDURE'),
+		// ('6', 'FUNCTION'),
+		// ('7', 'SEQUENCE'),
+		// ('8', 'PACKAGE'),
+		// ('9', '기타'),
+
+		if ( select_val == 5 )
+    	{
+						editor_select.setValue("-- DDL\n\
+CREATE OR REPLACE PROCEDURE [owner].[procedure_name]\n\
+(\n\
+[source]\n\
+);\n\
+/\n\
+\n\
+-- 권한\n\
+GRANT EXECUTE ON [owner].[procedure_name] TO [service_account];\n\
+\n\
+-- 시노님\n\
+CREATE OR REPLACE PUBLIC SYNONYM [procedure_name] FOR [owner].[procedure_name];\n");
+    	}
+    	else if ( select_val == 6 )
+    	{
+						editor_select.setValue("-- DDL\n\
+CREATE OR REPLACE FUNCTION [owner].[function_name]\n\
+(\n\
+[source]\n\
+);\n\
+/\n\
+\n\
+-- 권한\n\
+GRANT EXECUTE ON [owner].[function_name] TO [service_account];\n\
+\n\
+-- 시노님\n\
+CREATE OR REPLACE PUBLIC SYNONYM [function_name] FOR [owner].[function_name];\n");
+    	}
+		else if ( select_val == 7 )
+    	{
+						editor_select.setValue("-- DDL\n\
+CREATE SEQUENCE [owner].[sequence_name]\n\
+START WITH [n]\n\
+INCREMENT BY [n]\n\
+MAXVALUE [n]\n\
+MINVALUE [n]\n\
+CYCLE | NOCYCLE\n\
+ORDER | NOORDER\n\
+CACHE 2000\n\
+\n\
+-- 권한\n\
+GRANT SELECT ON [owner].[sequence_name] TO [service_account];\n\
+\n\
+-- 시노님\n\
+CREATE OR REPLACE PUBLIC SYNONYM [sequence_name] FOR [owner].[sequence_name];\n");
+    	}
+    	else if ( select_val == 3 )
+    	{
+						editor_select.setValue("-- DDL\n\
+CREATE INDEX [owner].[index_name] ON [owner].[table_name]\n\
+(\n\
+	[column_name_1],\n\
+	[column_name_2]\n\
+);\n")
+    	}
+    	else if ( select_val == 4 )
+    	{
+
+
+
+						editor_select.setValue("-- 권한\n\
+GRANT [SELECT, UPDATE, DELETE, INSERT, EXECUTE] ON [owner].[object_name] TO [service_account];\n\
+\n")
+    	}
+    	else if ( select_val == 8 )
+    	{
+						editor_select.setValue("/* 반영 할 Script를 입력해주세요 */\n-- 신규 Package 신청은 사전 문의 부탁드립니다.")
+    	}
+    	else
+    	{
+						editor_select.setValue("/* 반영 할 Script를 입력해주세요 */\n")
+    	}
+
+    	editor_select.refresh();
+
+
+
+
+	    var sel = document.getElementById('id_id_pl_dev');
+		var opt = sel.options[sel.selectedIndex];
+		id_pl_dev = opt.value
+
+	    var sel = document.getElementById('id_id_dblist');
+		var opt = sel.options[sel.selectedIndex];
+		id_dblist = opt.value
+
+		var sel = document.getElementById('id_obj_class');
+		var opt = sel.options[sel.selectedIndex];
+		obj_class = opt.value
+
+		var sel = document.getElementById('id_obj_new');
+		var opt = sel.options[sel.selectedIndex];
+		obj_new = opt.value
+
+  		if ( id_dblist != "" && obj_class != "" && obj_new != "" && id_pl_dev != "") {
+      		$('#btn_view_column').attr('disabled', false);
+      		if (obj_new != 1)
+      		{
+	      		$('#addToTable').attr('disabled', false);
+      		}
+      		$('#btn_handwork').attr('disabled', false);
+      		$('#checkToColumn').attr('disabled', false);
+      	}
+	})
+
+	$("#id_obj_new").change(function(){
+
+		$('.div_error').html("");
+
+
+	    var select_val =  $(this).val();
+
+
+		// 1 : 변경
+    	// 2 : 신규
+		// 3 : 삭제
+	    if ( select_val == 2 ) {
+	    	jQuery('#id_table_name').show();
+	    	jQuery('#id_table_comments').show();
+	    	jQuery('#id_storage_cycle').show();
+	    	jQuery('#btn_handwork').show();
+	    	jQuery('#id_storage_cycle_column').show();
+
+	    	document.getElementById('id_id_tablelist').disabled = true;
+	    	document.getElementById('id_owner').disabled = true;
+
+	    	var sel = document.getElementById('id_obj_class');
+	    	var opt = sel.options[sel.selectedIndex];
+	    	obj_class = opt.value
+
+	    	if ( obj_class == 2 )
+		    	alert("* [신규] 테이블인 경우 지켜주세요\n1. 테이블명 분류어 준수(도움말 링크 참고)\n   ex : ~기본(M),~정보(D),~로그(L) 등\n\n2. PK 컬럼 바로 아래 Audit컬럼 삽입\n   등록일시, 등록자ID, 수정일시, 수정자ID\n\n3. FK(참조) 존재 시 참조하는 테이블, 컬럼을 FK 란에 명시\n   ex : PRD_PRD_M.PRD_CD")
+
+	    }
+	    else {
+	    	jQuery('#id_table_name').hide();
+	    	jQuery('#id_table_comments').hide();
+	    	jQuery('#id_storage_cycle').hide();
+	    	jQuery('#btn_handwork').hide();
+	    	jQuery('#id_storage_cycle_column').hide();
+
+	    	document.getElementById('id_id_tablelist').disabled = false;
+	    	document.getElementById('id_owner').disabled = false;
+	    }
+
+	    editor_select.refresh();
+
+	    var sel = document.getElementById('id_id_pl_dev');
+		var opt = sel.options[sel.selectedIndex];
+		id_pl_dev = opt.value
+
+	    var sel = document.getElementById('id_id_dblist');
+		var opt = sel.options[sel.selectedIndex];
+		id_dblist = opt.value
+
+		var sel = document.getElementById('id_obj_class');
+		var opt = sel.options[sel.selectedIndex];
+		obj_class = opt.value
+
+		var sel = document.getElementById('id_obj_new');
+		var opt = sel.options[sel.selectedIndex];
+		obj_new = opt.value
+
+  		if ( id_dblist != "" && obj_class != "" && obj_new != "" && id_pl_dev != "") {
+      		$('#btn_view_column').attr('disabled', false);
+      		if (obj_new != 1)
+      		{
+	      		$('#addToTable').attr('disabled', false);
+      		}
+      		$('#btn_handwork').attr('disabled', false);
+      		$('#checkToColumn').attr('disabled', false);
+      	}
+	})
+
+
+
+	$("#saveMetaReq").click(function(){
+
+		checkUnload = false;
+
+		$('.div_error').html("");
+
+		var title = $("#id_title").val();
+		var csr = $("#id_csr").val();
+
+		if( title == "" ){
+			$("#err_title").html("* 제목을 입력해주세요")
+		}
+
+		if( csr == "" ){
+			$("#err_title").html("* CSR 번호를 입력해주세요")
+		}
+
+		var sel = document.getElementById('id_id_dblist');
+		var opt = sel.options[sel.selectedIndex];
+		id_dblist = opt.value
+
+		if( id_dblist == "" ){
+			$("#err_id_dblist").html("* Database를 선택해주세요")
+		}
+
+
+
+		var sel = document.getElementById('id_id_tablelist');
+		var opt = sel.options[sel.selectedIndex];
+		id_tablelist = opt.value
+
+		// 1 : 테이블 - 표준
+		// 2 : 테이블 - 비표준
+		// 3 : 스크립트
+		var sel = document.getElementById('id_obj_class');
+		var opt = sel.options[sel.selectedIndex];
+		obj_class = opt.value
+
+
+		// 1 : 변경
+		// 2 : 신규
+		// 3 : 삭제
+		var sel = document.getElementById('id_obj_new');
+		var opt = sel.options[sel.selectedIndex];
+		obj_new = opt.value
+
+
+		var sel = document.getElementById('id_id_pl_dev');
+		var opt = sel.options[sel.selectedIndex];
+		id_pl_dev = opt.value
+
+
+		var script = editor_select.getValue();
+
+		var req_contents = $("#id_req_contents").val();
+
+		if( req_contents == "" ){
+			$("#err_req_contents").html("* 요청 내용을 입력해주세요")
+		}
+
+		if ( title == "" || csr == "" || id_dblist == "" || req_contents == "" || id_pl_dev == "" ) {
+			return;
+		}
+
+		var table_name = $("#id_table_name").val();
+		var table_comments = $("#id_table_comments").val();
+		var storage_cycle = $("#id_storage_cycle").val();
+		var storage_cycle_column = $("#id_storage_cycle_column").val();
+
+		var sel = document.getElementById('id_id_domainanddblist');
+		var opt = sel.options[sel.selectedIndex];
+		id_domainanddblist = opt.value
+
+		if( table_name.length > 24 ){
+			$("#err_table_name").html("* 테이블명 길이는 24자 이하로 되어야 합니다. 현재 " + table_name.length + "자")
+			return;
+		}
+
+		// 테이블 요청이고 신규 건 일 때
+		if ( obj_class <= 2 && obj_new == 2 ) {
+			if ( table_name == "" || table_comments == "" || storage_cycle == "" || storage_cycle_column == "" || id_domainanddblist == "" ) {
+				$("#err_table_name").html("* 신규 요청 시 테이블 물리명/논리명/보관주기/도메인 입력이 필수 입니다.")
+				return;
+			}
+		}
+
+		if ( obj_class <= 2 && obj_new <= 2 && id_domainanddblist == "" ) {
+				$("#err_table_name").html("* 도메인 입력은 필수 입니다.")
+				return;
+		}
+
+
+
+
+
+		var dt = window.dt;
+
+		var data = dt
+		    .data();
+
+
+		// 유형이 테이블-표준 또는 테이블-비표준 일 경우
+
+		var eng_column_null = 'N'
+		var change_case_null = 'N'
+
+		if ( obj_class == 1 || obj_class == 2 ) {
+
+			if ( data.length == 0 && obj_new <= 2 ) {
+				$("#err_datatable_lengh").html("* 저장 전 변경할 메타 정보를 입력하세요")
+				return;
+			}
+
+
+			var colArray = new Array( new Array(data.length), new Array(3) );
+
+			var Cnt = data.length;
+	        var Arr = [];
+
+
+	        var ind = 0
+	        $.each(data, function(i, val) {
+
+	        	var select_count = (val[7].match(/select/g) || []).length;
+	        	var data_type_option_count = (val[7].match(/option/g) || []).length;
+
+
+	        	if ( val[6] == '' || val[7] == '' || ( select_count > 0 && data_type_option_count == 0 ) ) {
+	        		eng_column_null = 'Y'
+	        	}
+
+	        	if ( val[0] == '신규' && ( val[8] == '' || val[2] == '' ) ) {
+	        		change_case_null = 'Y'
+	        	}
+
+
+
+
+	            Arr[ind] =  val[0] + "|*|" + // 구분
+	            			val[1] + "|*|" + // 컬럼 순서
+	            			val[2] + "|*|" + // 컬럼 한글명
+	            			val[3] + "|*|" + // PK
+	            			val[4] + "|*|" + // NOT NULL
+	            			val[5] + "|*|" + // Defult 값
+	            			val[6] + "|*|" + // 컬럼 영문명
+	            			val[7] + "|*|" + // 컬럼 DATATYPE
+	            			val[8] + "|*|" + // 변경사항
+	            			val[9] + "|*|" + // 변경이유
+	            			val[10]
+	            ind += 1;
+
+	        });
+	    }
+	    else {
+	    	if ( script == "/* 반영 할 Script를 입력해주세요 */\n" ) {
+	    		$("#err_script").html("* 저장 전 변경할 스크립트를 입력하세요")
+	    		return;
+	    	}
+	    }
+
+	    if ( eng_column_null == 'Y') {
+	    	$("#err_datatable_lengh").html("* 컬럼 한글명/영문명/data type 이 모두 입력되어야 합니다.")
+	    	return
+	    }
+	    if ( change_case_null == 'Y') {
+	    	$("#err_datatable_lengh").html("* 신규/변경/삭제 컬럼에 대해 [변경사항] 필드를 선택해주세요 ")
+	    	return
+	    }
+
+
+
+        var l_data_type = [];
+        var ind = 0
+        $('select[name=sel_datatype] option:selected').each(function(index){
+         	l_data_type[ind] = $(this).val()
+         	// etcs += $(this).attr('etc') +',';
+         	ind += 1
+        });
+        // id_tablelist = $("#div_id_tablelist").html();
+        // id_dblist = $("#div_id_dblist").html();
+
+        if (!confirm('저장할까요? 저장 시 개발DB 반영이 진행됩니다.'))
+			return false
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaReqSave' %}",
+	      data: { 'saveOrupdate' : 'update', // updateupdate
+	              'id_metareq' : '{{id_metareq}}',
+	      		  'data[]' : Arr,
+	      		  'l_data_type[]' : l_data_type,
+	      		  'id_tablelist' : id_tablelist,
+	      		  'id_dblist' : id_dblist,
+	      		  'id_pl_dev' : id_pl_dev,
+	      		  'title' : title,
+	      		  'csr' : csr,
+	      		  'script': script,
+	      		  'obj_class':obj_class,
+	      		  'req_contents':req_contents,
+	      		  'obj_new':obj_new,
+	      		  'table_name':table_name,
+	      		  'table_comments':table_comments,
+	      		  'storage_cycle':storage_cycle,
+	      		  'storage_cycle_column':storage_cycle_column,
+	      		  'id_domainanddblist':id_domainanddblist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		alert("저장되었습니다.")
+	      		window.location.href = "{% url 'MetaReqListLV' 1234 %}".replace(/1234/, json.save_id);
+
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	});
+
+
+	$("#checkToColumn").click(function(){
+
+		$('.div_error').html("");
+
+
+		var dt = window.dt;
+
+		var data = dt
+		    .data();
+
+		if ( data.length == 0 ){
+			return;
+		}
+
+		var colArray = new Array( new Array(data.length), new Array(3) );
+
+		var Cnt = data.length;
+        var Arr = [];
+
+        var ind = 0
+        $.each(data, function(i, val) {
+
+        	if ( val[0] == "신규" ) {
+	            Arr[ind] = new Array();
+	            Arr[ind][0] = val[1];
+	            Arr[ind][1] = val[2];
+	            Arr[ind][2] = val[3];
+	            Arr[ind][3] = val[4];
+
+	            Arr[ind][4] = val[6];
+	            Arr[ind][5] = val[7];
+	            Arr[ind][6] = val[8];
+
+	            ind += 1;
+        	}
+        });
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaRegCheckColumn' %}",
+	      data: { 'data[]' : Arr,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+
+		      	dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+		      	   var data = this.data();
+
+		      	   $.each(json.org_kor, function(i, val){
+		      	   		// 1 : ORACLE
+		      	   		if ( $("#div_db_type").html() == 1 ) {
+
+			      	   		if( data[0] == "신규" && json.org_kor[i].toUpperCase() == data[2].toUpperCase() ){
+			      	   			data[6] = json.l_eng_attr_name[i]
+
+			     //  	   			var oracle_domain_datatype ='<select name="sel_datatype">'
+					   //    		$.each(json.l_oracle_domain_datatype[i], function(i, val){
+					   //    			oracle_domain_datatype += '<option value='+val+'>'+val+'</option>'
+					   //    		});
+								// oracle_domain_datatype += '</select>';
+
+
+			      	   			var oracle_domain_datatype =''
+					      		$.each(json.l_oracle_domain_datatype[i], function(i, val){
+					      			oracle_domain_datatype = val
+					      			return false;
+					      		});
+
+			      	   			data[7] = oracle_domain_datatype
+			      	   		}
+			      	   	}
+			      	   	// 2 : MYSQL, MARIADB
+			      	   	else if ( $("#div_db_type").html() == 2 || $("#div_db_type").html() == 3) {
+			      	   		if( data[0] == "신규" && json.org_kor[i].toUpperCase() == data[2].toUpperCase() ){
+			      	   			data[6] = json.l_eng_attr_name[i]
+
+			     //  	   			var mysql_domain_datatype ='<select name="sel_datatype">'
+					   //    		$.each(json.l_mysql_domain_datatype[i], function(i, val){
+					   //    			mysql_domain_datatype += '<option value='+val+'>'+val+'</option>'
+					   //    		});
+								// mysql_domain_datatype += '</select>';
+
+			      	   			var mysql_domain_datatype =''
+					      		$.each(json.l_mysql_domain_datatype[i], function(i, val){
+					      			mysql_domain_datatype = val
+					      			return false;
+					      		});
+
+			      	   			data[7] = mysql_domain_datatype
+			      	   		}
+			      	   	}
+		      	   });
+		      	   this.data(data)
+		      	} )
+
+
+
+	      		// EditableTable.rowLoad()
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	});
+
+
+
+	$("#btn_retry").click(function(){
+
+		$('.div_error').html("");
+
+		var dt = window.dt;
+		var data = dt
+		    .data();
+
+		if  ( data.length > 0 ) {
+			var result = confirm("변경 시 아래 입력 된 컬럼 정보가 모두 초기화 됩니다.");
+			if(result){
+				dt.clear();
+				dt.draw();
+
+				document.getElementById('id_id_tablelist').disabled = false;
+				document.getElementById('id_id_dblist').disabled = false;
+				document.getElementById('id_id_pl_dev').disabled = false;
+				document.getElementById('id_owner').disabled = false;
+				document.getElementById('id_obj_class').disabled = false;
+				document.getElementById('id_obj_new').disabled = false;
+
+				$('#checkToColumn').attr('disabled', false);
+				$('#btn_handwork').attr('disabled', false);
+				$('#btn_view_column').attr('disabled', false);
+
+				$('#addToTable').attr('disabled', true);
+			}
+		}
+	})
+
+	$("#btn_view_column").click(function(){
+
+		var sel = document.getElementById('id_obj_new');
+		var opt = sel.options[sel.selectedIndex];
+		obj_new = opt.value
+
+		if ( obj_new != "1" )
+		{
+			alert("테이블 변경일 경우만 사용 가능합니다")
+			return;
+		}
+
+		$('.div_error').html("");
+
+
+
+		var sel = document.getElementById('id_id_tablelist');
+		var opt = sel.options[sel.selectedIndex];
+		id_tablelist = opt.value
+
+		var sel = document.getElementById('id_id_dblist');
+		var opt = sel.options[sel.selectedIndex];
+		id_dblist = opt.value
+
+		var sel = document.getElementById('id_obj_class');
+		var opt = sel.options[sel.selectedIndex];
+		obj_class = opt.value
+
+		var sel = document.getElementById('id_obj_new');
+		var opt = sel.options[sel.selectedIndex];
+		obj_new = opt.value
+
+		var sel = document.getElementById('id_id_dblist');
+		var opt = sel.options[sel.selectedIndex];
+		id_dblist = opt.value
+
+		var sel = document.getElementById('id_id_pl_dev');
+		var opt = sel.options[sel.selectedIndex];
+		id_pl_dev = opt.value
+
+
+
+		if( id_tablelist == "" || obj_class == "" || obj_new == "" || id_dblist == "" || id_pl_dev == "" ) {
+		    $("#err_table_name").html("[안내] 오브젝트유형, 신청유형, 데이터베이스, 승인자, Owner, 테이블을 모두 선택해주세요")
+		    return false;
+		}
+		else{
+			$("#err_table_name").html("")
+		}
+
+		document.getElementById('id_id_tablelist').disabled = true;
+		document.getElementById('id_id_dblist').disabled = true;
+		document.getElementById('id_id_pl_dev').disabled = true;
+		document.getElementById('id_owner').disabled = true;
+		document.getElementById('id_obj_class').disabled = true;
+		document.getElementById('id_obj_new').disabled = true;
+
+
+
+
+		$("#div_id_tablelist").html(id_tablelist)
+		$("#div_id_dblist").html(id_dblist)
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaRegShowColumn' %}",
+	      data: { 'id_tablelist' : id_tablelist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+
+	      		// EditableTable.rowLoad()
+
+	      		// 1: oracle
+	      		// 2: mysql
+
+	      		$("#div_db_type").html(json.id_dbtype)
+
+
+  				if ( json.id_domainanddblist > 0 ) {
+	  				var studentSelect = $('#id_id_domainanddblist');
+		      		var option = new Option(json.text_domainanddblist, json.id_domainanddblist, true, true);
+	      		    studentSelect.append(option).trigger('change');
+	      		}
+	      		else {
+
+	  				var studentSelect = $('#id_id_domainanddblist');
+	  				var option = new Option('', '', true, true);
+	      		    studentSelect.append(option).trigger('change');
+	      		}
+
+	      		EditableTable.clear();
+
+	      		$.each(json.columns, function(i, val){
+	      		   EditableTable.rowLoad(
+	      		   						'기존',
+	      		   						parseInt(val[0]),     // column_id
+	      		   						 val[1], // comments
+	      		   						 val[2],   // pk_yn
+	      		   						 val[3],   // not null
+	      		   						 val[4],    // data_default
+	      		   						 val[5],   // column_name
+	      		   						 val[6],    // data_type
+	      		   						 val[7]    // secu_yn
+	      		   						 )
+	      		});
+
+
+
+
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	$(document).ready(function(e) {
+
+		var sel = document.getElementById('id_obj_class');
+		var opt = sel.options[sel.selectedIndex];
+
+		before_id_obj_class = opt.value
+
+		var new_check = 0
+
+		EditableTable = {
+
+								options: {
+									addButton: '#addToTable',
+									table: '#datatable-editable',
+									dialog: {
+										wrapper: '#dialog',
+										cancelButton: '#dialogCancel',
+										confirmButton: '#dialogConfirm',
+									}
+								},
+
+								initialize: function() {
+									this
+										.setVars()
+										.build()
+										.events();
+								},
+
+								setVars: function() {
+									this.$table				= $( this.options.table );
+									this.$addButton			= $( this.options.addButton );
+
+									// dialog
+									this.dialog				= {};
+									this.dialog.$wrapper	= $( this.options.dialog.wrapper );
+									this.dialog.$cancel		= $( this.options.dialog.cancelButton );
+									this.dialog.$confirm	= $( this.options.dialog.confirmButton );
+
+									return this;
+								},
+
+								build: function() {
+									this.datatable = this.$table.DataTable({
+										"pageLength": 400,
+										"dom" : 'Brt',
+										"bAutoWidth": false,
+										// "ordering": false,
+										aoColumns: [
+											null,
+											{"sType":"numbercase"},
+											null,
+											null,
+											null,
+											null,
+											null,
+											null,
+											null,
+											null,
+											null,
+											{ "bSortable": false }
+										],
+
+									});
+
+									window.dt = this.datatable;
+
+									return this;
+								},
+
+								events: function() {
+									var _self = this;
+
+									this.$table
+										.on('click', 'a.save-row', function( e ) {
+											e.preventDefault();
+
+
+											_self.rowSave( $(this).closest( 'tr' ) );
+
+										})
+										.on('click', 'a.cancel-row', function( e ) {
+											e.preventDefault();
+
+											_self.rowCancel( $(this).closest( 'tr' ) );
+										})
+										.on('click', 'a.standard-row', function( e ) {
+											e.preventDefault();
+
+											_self.rowStandard( $(this).closest( 'tr' ) );
+										})
+										.on('click', 'a.edit-row', function( e ) {
+											e.preventDefault();
+
+											_self.rowEdit( $(this).closest( 'tr' ) );
+										})
+
+										.on('click', 'a.change-row', function( e ) {
+											e.preventDefault();
+
+											_self.showChangeModalForChange( $(this).closest( 'tr' ) );
+										})
+
+										.on('click', 'a.remove-mark-row', function( e ) {
+											e.preventDefault();
+
+											_self.removeMarkRow( $(this).closest( 'tr' ) );
+										})
+
+										.on( 'click', 'a.remove-row', function( e ) {
+											e.preventDefault();
+
+											var $row = $(this).closest( 'tr' );
+
+											_self.rowRemove( $row );
+										});
+
+									this.$addButton.on( 'click', function(e) {
+										e.preventDefault();
+										_self.rowAdd();
+									});
+
+									this.dialog.$cancel.on( 'click', function( e ) {
+										e.preventDefault();
+										$.magnificPopup.close();
+									});
+
+									return this;
+								},
+
+								// ==========================================================================================
+								// ROW FUNCTIONS
+								// ==========================================================================================
+								clear: function() {
+									this.datatable.clear()
+								},
+
+								rowUpdate: function(val) {
+									this.datatable.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+									   var data = this.data();
+									   data[2] += val
+									   this.data(data)
+									} )
+								},
+
+								rowAdd: function() {
+									// alert('[중요1] 컬럼 변경은 "신규 컬럼 추가" 버튼이 아닌 해당 컬럼 오른쪽의 "수정" 버튼을 통해 진행해주세요\n[중요2] 신규 컬럼은 DB 반영 시 가장 마지막에 위치 합니다.')
+
+
+									// this.$addButton.attr({ 'disabled': 'disabled' });
+									$('#checkToColumn').attr('disabled', true);
+									$('#btn_view_column').attr('disabled', true);
+
+
+
+									var actions,
+										data,
+										$row;
+
+									actions = [
+										'<a href="#" class="hidden on-editing save-row btn-xs btn btn-default">저장</a>',
+										'<a href="#" class="hidden on-editing cancel-row btn-xs btn btn-default">취소</a>',
+										'<a href="#" class="on-default edit-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="수정">수정</a>',
+										'<a href="#" class="on-default standard-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="표준검사">표준적용</a>',
+										'<a href="#" class="on-default remove-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="삭제">삭제</a>'
+									].join(' ');
+
+									data = this.datatable.row.add([ '신규', '', '', '', '', '', '', '', '+ 신규', '', '', actions ]);
+									$row = this.datatable.row( data[0] ).nodes().to$();
+
+
+
+
+
+
+									$row
+										.find( 'td:eq(0)' )
+										.addClass( 'div' )
+										.css('background-color', '#b3424a')
+										.css('color', 'white');
+
+									$row
+										.find( 'td:eq(1)' )
+										.addClass( 'div' );
+
+									$row
+										.find( 'td:eq(2)' )
+										.addClass( 'modify' );
+
+									$row
+										.find( 'td:eq(3)' )
+										.addClass( 'yorn' );
+
+									$row
+										.find( 'td:eq(4)' )
+										.addClass( 'yorn' );
+
+									$row
+										.find( 'td:eq(5)' )
+										.addClass( 'modify' );
+
+									$row
+										.find( 'td:eq(6)' )
+										.addClass( 'column_name' );
+
+									$row
+										.find( 'td:eq(7)' )
+										.addClass( 'data_type' );
+
+
+									$row
+										.find( 'td:eq(8)' )
+										.addClass( 'change_list' );
+
+									$row
+										.find( 'td:eq(9)' )
+										.addClass( 'change_reason' );
+
+									$row
+										.find( 'td:eq(10)' )
+										.addClass( 'privacy_list' );
+
+									$row
+										.addClass( 'adding' )
+										.find( 'td:last' )
+										.addClass( 'actions' );
+
+									this.rowEdit( $row );
+
+									this.datatable.order([1,'asc']).draw(); // always show fields
+								},
+
+								rowLoad: function(div,
+												  column_id,
+												  col_comments,
+												  pk_yn,
+												  not_null,
+												  data_default,
+												  column_name,
+												  data_type,
+												  secu_yn) {
+
+									console.log("rowLoad")
+
+
+									if ( pk_yn == "0") {
+										pk_yn = "N"
+									} else if ( pk_yn == "1") {
+										pk_yn = "Y"
+									}
+
+									if ( not_null == "0") {
+										not_null = "N"
+									} else if ( not_null == "1") {
+										not_null = "Y"
+									}
+
+									if ( div != "변경" ) {
+										column_id = parseInt(column_id) * 10
+									}
+
+									var actions,
+										data,
+										$row;
+
+									if ( div == "기존" )
+									{
+										actions = [
+											'<a href="#" class="hidden on-editing save-row btn-xs btn btn-default">저장</a>',
+											'<a href="#" class="hidden on-editing cancel-row btn-xs btn btn-default">취소</a>',
+											'<a href="#" class="on-default change-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="변경">수정</a>',
+											'<a href="#" class="on-default remove-mark-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="삭제">삭제</a>'
+										].join(' ');
+
+										data = this.datatable.row.add([ div,
+																	parseInt(column_id),
+																	col_comments,
+																	pk_yn,
+																	not_null,
+																	data_default,
+																	column_name,
+																	data_type,
+																	'',
+																	'',
+																	secu_yn,
+																	actions ]);
+									}
+									else if ( div == "변경" )
+									{
+										actions = [
+										'<a href="#" class="hidden on-editing save-row btn-xs btn btn-default">저장</a>',
+										'<a href="#" class="hidden on-editing cancel-row btn-xs btn btn-default">취소</a>',
+										'<a href="#" class="on-default edit-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="수정">수정</a>',
+										'<a href="#" class="on-default standard-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="표준검사">표준적용</a>',
+										'<a href="#" class="on-default remove-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="삭제">삭제</a>'
+										].join(' ');
+
+										data = this.datatable.row.add([ '신규',
+																	parseInt(column_id),
+																	col_comments,
+																	pk_yn,
+																	not_null,
+																	data_default,
+																	column_name,
+																	data_type,
+																	'+ └ TOBE',
+																	'',
+																	secu_yn,
+																	actions ]);
+
+
+
+									}
+									else if ( div == "신규" )
+									{
+										actions = [
+										'<a href="#" class="hidden on-editing save-row btn-xs btn btn-default">저장</a>',
+										'<a href="#" class="hidden on-editing cancel-row btn-xs btn btn-default">취소</a>',
+										'<a href="#" class="on-default edit-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="수정">수정</a>',
+										'<a href="#" class="on-default standard-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="표준검사">표준적용</a>',
+										'<a href="#" class="on-default remove-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="삭제">삭제</a>'
+										].join(' ');
+
+										data = this.datatable.row.add([ div,
+																	parseInt(column_id),
+																	col_comments,
+																	pk_yn,
+																	not_null,
+																	data_default,
+																	column_name,
+																	data_type,
+																	'+ 신규',
+																	'',
+																	secu_yn,
+																	actions ]);
+									}
+
+
+
+
+									$row = this.datatable.row( data[0] ).nodes().to$();
+
+
+
+									if ( div == "변경" || div == "신규" )
+									{
+										$row
+											.find( 'td:eq(0)' )
+											.addClass( 'div' )
+											.css('background-color', '#b3424a')
+											.css('color', 'white');
+									}
+									else
+									{
+										$row
+											.find( 'td:eq(0)' )
+											.addClass( 'div' );
+									}
+
+									$row
+										.find( 'td:eq(1)' )
+										.addClass( 'div' );
+
+									$row
+										.find( 'td:eq(2)' )
+										.addClass( 'modify' );
+
+									$row
+										.find( 'td:eq(3)' )
+										.addClass( 'yorn' );
+
+									$row
+										.find( 'td:eq(4)' )
+										.addClass( 'yorn' );
+
+									$row
+										.find( 'td:eq(5)' )
+										.addClass( 'modify' );
+
+									$row
+										.find( 'td:eq(6)' )
+										.addClass( 'column_name' );
+
+									$row
+										.find( 'td:eq(7)' )
+										.addClass( 'data_type' );
+
+									$row
+										.find( 'td:eq(8)' )
+										.addClass( 'change_list' );
+
+									$row
+										.find( 'td:eq(9)' )
+										.addClass( 'change_reason' );
+									$row
+										.find( 'td:eq(10)' )
+										.addClass( 'privacy_list' );
+
+									$row
+										.addClass( 'adding' )
+										.find( 'td:last' )
+										.addClass( 'actions' );
+
+
+
+									// this.rowSave( $row );
+
+									var _self     = this,
+										$actions,
+										values    = [];
+
+									if ( $row.hasClass( 'adding' ) ) {
+										this.$addButton.removeAttr( 'disabled' );
+										$row.removeClass( 'adding' );
+
+										$('#checkToColumn').attr('disabled', false);
+										$('#btn_view_column').attr('disabled', false);
+									}
+
+									values = $row.find('td').map(function() {
+										var $this = $(this);
+
+										if ( $this.hasClass('actions') ) {
+											_self.rowSetActionsDefault( $row );
+											return _self.datatable.cell( this ).data();
+										}
+										else {
+											return _self.datatable.cell( this ).data();
+										}
+									});
+
+									this.datatable.row( $row.get(0) ).data( values );
+
+									$actions = $row.find('td.actions');
+									if ( $actions.get(0) ) {
+										this.rowSetActionsDefault( $row );
+									}
+
+
+
+									this.datatable.draw();
+
+
+
+									this.datatable.order([1,'asc']).draw(); // always show fields
+								},
+
+
+
+								rowStandard: function( $row ) {
+									var _self = this,
+										$actions,
+										i,
+										data;
+
+									data = this.datatable.row( $row.get(0) ).data();
+
+									if ( data[2] == "" ){
+										return;
+									}
+
+									var Arr = [];
+									Arr[0] = new Array();
+
+
+						            Arr[0][0] = data[1];
+						            Arr[0][1] = data[2];
+						            Arr[0][2] = data[3];
+						            Arr[0][3] = data[4];
+
+						            Arr[0][4] = data[6];
+						            Arr[0][5] = data[7];
+						            Arr[0][6] = data[8];
+
+
+
+							        // 1: oracle
+							        // 2: mysql
+
+							        // $("#div_db_type").html(json.id_dbtype)
+
+									$.ajax({
+								      type: "POST",
+								      url: "{% url 'ajaxMetaRegCheckColumn' %}",
+								      data: { 'data[]' : Arr,
+								              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+								      dataType: "json",
+								      "success": function(json) {
+
+									      	dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+									      	   var data = this.data();
+
+									      	   $.each(json.org_kor, function(i, val){
+
+									      	   		// 1 : ORACLE
+									      	   		if ( $("#div_db_type").html() == 1 ) {
+										      	   		if( data[0] == "신규" && json.org_kor[i].toUpperCase()  == data[2].toUpperCase()  ){
+										      	   			data[6] = json.l_eng_attr_name[i]
+
+										     //  	   			var oracle_domain_datatype ='<select name="sel_datatype">'
+												   //    		$.each(json.l_oracle_domain_datatype[i], function(i, val){
+												   //    			oracle_domain_datatype += '<option value='+val+'>'+val+'</option>'
+												   //    		});
+															// oracle_domain_datatype += '</select>';
+
+										      	   			var oracle_domain_datatype =''
+												      		$.each(json.l_oracle_domain_datatype[i], function(i, val){
+												      			oracle_domain_datatype = val
+												      			return false;
+												      		});
+
+										      	   			data[7] = oracle_domain_datatype
+										      	   		}
+										      	   	}
+										      	   	// 2 : MYSQL
+										      	   	else if ( $("#div_db_type").html() == 2 || $("#div_db_type").html() == 3) {
+										      	   		if( data[0] == "신규" && json.org_kor[i].toUpperCase()  == data[2].toUpperCase()  ){
+										      	   			data[6] = json.l_eng_attr_name[i]
+
+										     //  	   			var mysql_domain_datatype ='<select name="sel_datatype">'
+												   //    		$.each(json.l_mysql_domain_datatype[i], function(i, val){
+												   //    			mysql_domain_datatype += '<option value='+val+'>'+val+'</option>'
+												   //    		});
+															// mysql_domain_datatype += '</select>';
+
+															var mysql_domain_datatype =''
+												      		$.each(json.l_mysql_domain_datatype[i], function(i, val){
+												      			mysql_domain_datatype = val
+												      			return false;
+												      		});
+
+										      	   			data[7] = mysql_domain_datatype
+										      	   		}
+										      	   	}
+									      	   });
+									      	   this.data(data)
+									      	} )
+
+
+
+								      		// EditableTable.rowLoad()
+
+								        },
+								        beforeSend:function(){
+
+										},
+									    complete:function(){
+
+									    },
+
+								      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+								      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+								      },
+									});
+
+
+								},
+
+								rowCancel: function( $row ) {
+									var _self = this,
+										$actions,
+										i,
+										data;
+
+
+									this.$addButton.removeAttr( 'disabled' );
+									$row.removeClass( 'adding' );
+
+									$('#checkToColumn').attr('disabled', false);
+									$('#btn_view_column').attr('disabled', false);
+
+
+									if ( $row.hasClass('adding') ) {
+										this.rowRemove( $row );
+									} else {
+
+										data = this.datatable.row( $row.get(0) ).data();
+										this.datatable.row( $row.get(0) ).data( data );
+
+										$actions = $row.find('td.actions');
+										if ( $actions.get(0) ) {
+											this.rowSetActionsDefault( $row );
+										}
+
+										this.datatable.draw();
+									}
+
+									if ( $row.hasClass( 'adding' ) ) {
+										this.$addButton.removeAttr( 'disabled' );
+										$row.removeClass( 'adding' );
+
+										$('#checkToColumn').attr('disabled', false);
+										$('#btn_view_column').attr('disabled', false);
+									}
+								},
+
+								showChangeModalForChange: function( $row ) {
+
+
+
+
+
+
+
+
+
+
+
+
+									var _self = this,
+										data;
+
+									data = this.datatable.row( $row.get(0) ).data();
+
+
+
+
+
+									$("#modal_column_no").html(data[1])
+									$("#modal_comments").val(data[2])
+									$("#modal_pk_yn").val(data[3])
+									$("#modal_not_null").val(data[4])
+									$("#modal_default").val(data[5])
+									$("#modal_column_name").val(data[6])
+									$("#modal_data_type").val(data[7])
+									$("#modal_secu_yn").val(data[10])
+
+							    	var dt = window.dt;
+
+							    	var in_data = dt
+							    	    .data();
+
+							    	if ( in_data.length == 0 ){
+							    		return;
+							    	}
+
+							      	dup_yn = "N"
+							      	dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+							       	   var in_data = this.data();
+
+							     		if( in_data[1] == (Number(data[1]) + 1 ) ){
+							     			alert("기존에 추가한 행("+ (Number(data[1]) + 1) +")을 먼저 삭제해주세요")
+							     			dup_yn = "Y"
+							     			return false;
+								   		}
+							      	} )
+
+							      	if (dup_yn == "N" )
+							      	{
+								      	$("#btn_change_row").click()
+							      	}
+
+
+
+
+									// $('#checkToColumn').attr('disabled', true);
+									// $('#btn_view_column').attr('disabled', true);
+
+								},
+
+								rowEdit: function( $row ) {
+
+
+
+									// this.$addButton.attr({ 'disabled': 'disabled' });
+									$('#checkToColumn').attr('disabled', true);
+									$('#btn_view_column').attr('disabled', true);
+
+									var _self = this,
+										data;
+
+									data = this.datatable.row( $row.get(0) ).data();
+
+
+
+									// 2 이면 비표준
+									var sel = document.getElementById('id_obj_class');
+									var opt = sel.options[sel.selectedIndex];
+
+									id_obj_class = opt.value
+
+
+
+
+
+									// 신규
+									// if ( data[0] == "" || data[0]%10 != 0 ) {
+									if ( data[0] == "신규" ) {
+
+										new_check = 0
+
+										$row.children( 'td' ).each(function( i ) {
+											var $this = $( this );
+
+											if ( $this.hasClass('actions') ) {
+												_self.rowSetActionsEditing( $row );
+											} else if ( $this.hasClass('modify') ) {
+												$this.html( '<input type="text" class="form-control input-block input-sm" value="' + data[i] + '"/>' );
+											} else if ( $this.hasClass('change_reason') ) {
+												$this.html( '<input type="text" class="form-control input-block input-sm" value="' + data[i] + '"/>' );
+											} else if ( $this.hasClass('yorn') ) {
+
+												if ( data[i] == "N" ) {
+													$this.html( '<select name="sel_change" style="width:50px;"> \
+																	<option value=0 selected>N</option> \
+																	<option value=1>Y</option> \
+																</select>' );
+												} else if ( data[i] == "Y" ) {
+													$this.html( '<select name="sel_change" style="width:50px;"> \
+																	<option value=0>N</option> \
+																	<option value=1 selected>Y</option> \
+																</select>' );
+												} else {
+													$this.html( '<select name="sel_change" style="width:50px;"> \
+																	<option value=0>N</option> \
+																	<option value=1>Y</option> \
+																</select>' );
+												}
+											} else if ( $this.hasClass('column_name') ) {
+												if ( id_obj_class == "1" )
+													$this.html("");
+												else if ( id_obj_class == "2" )
+													if ( data[i].includes('<') )
+														$this.html( '<input type="text" class="form-control input-block input-sm" value=""/>' );
+													else
+														$this.html( '<input type="text" class="form-control input-block input-sm" value="' + data[i] + '"/>' );
+											} else if ( $this.hasClass('data_type') ) {
+												if ( id_obj_class == "1" )
+													$this.html("");
+												else if ( id_obj_class == "2" )
+													if ( data[i].includes('<') )
+														$this.html( '<input type="text" class="form-control input-block input-sm" value=""/>' );
+													else
+														$this.html( '<input type="text" class="form-control input-block input-sm" value="' + data[i] + '"/>' );
+											} else if ( $this.hasClass('change_list') ) {
+												$this.html(data[i]);
+											} else if ( $this.hasClass('privacy_list') ) {
+												if ( data[i] == "" ) {
+													$this.html( '<select name="sel_change" style="width:50px;"> \
+																	<option value="" selected ></option> \
+																	<option value="개인정보">개인정보</option> \
+																 </select>' );
+												} else if ( data[i] == "개인정보" ) {
+													$this.html( '<select name="sel_change" style="width:50px;"> \
+																	<option value="" ></option> \
+																	<option value="개인정보" selected>개인정보</option> \
+																 </select>' );
+												} else {
+													$this.html( '<select name="sel_change" style="width:50px;"> \
+																	<option value="" ></option> \
+																	<option value="개인정보">개인정보</option> \
+																 </select>' );
+												}
+											}
+										});
+									}
+									else {
+
+										new_check = 1
+
+										$row.children( 'td' ).each(function( i ) {
+											var $this = $( this );
+
+											if ( $this.hasClass('actions') ) {
+												_self.rowSetActionsEditing( $row );
+											} else if ( $this.hasClass('modify') ) {
+												$this.html( '<input type="text" disabled class="form-control input-block input-sm" value="' + data[i] + '"/>' );
+											} else if ( $this.hasClass('change_reason') ) {
+												$this.html( '<input type="text" class="form-control input-block input-sm" value="' + data[i] + '"/>' );
+											} else if ( $this.hasClass('yorn') ) {
+
+												if ( data[i] == "N" ) {
+													$this.html( '<select disabled name="sel_change"> \
+																	<option value=0 selected>N</option> \
+																	<option value=1>Y</option> \
+																</select>' );
+												} else if ( data[i] == "Y" ) {
+													$this.html( '<select disabled name="sel_change"> \
+																	<option value=0>N</option> \
+																	<option value=1 selected>Y</option> \
+																</select>' );
+												} else {
+													$this.html( '<select disabled name="sel_change"> \
+																	<option value=0>N</option> \
+																	<option value=1>Y</option> \
+																</select>' );
+												}
+											} else if ( $this.hasClass('change_list') ) {
+												$this.html(data[i]);
+											}
+										});
+									}
+								},
+
+								removeMarkRow: function( $row ) {
+
+									data = this.datatable.row( $row.get(0) ).data();
+
+									column_no = Number(data[1])
+
+							    	var dt = window.dt;
+
+							    	var data = dt
+							    	    .data();
+
+							    	if ( data.length == 0 ){
+							    		return;
+							    	}
+
+							      	dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+							       	   var data = this.data();
+
+							     		if( data[1] == column_no ){
+								   			if ( data[8] == "" )
+								   			{
+									   			data[8] = "+ 삭제"
+									   			alert("[안내] 다시 클릭하면 취소할 수 있습니다")
+								   			}
+								   			else if ( data[8] == "+ 삭제" )
+								   			{
+								   				data[8] = ""
+								   			}
+								   		}
+
+							      	   this.data(data)
+							      	} )
+
+								},
+
+								rowSave: function( $row ) {
+														        var _self     = this,
+														                $actions,
+														                values    = [];
+
+														        this.$addButton.removeAttr( 'disabled' );
+														        $row.removeClass( 'adding' );
+
+														        $('#checkToColumn').attr('disabled', false);
+														        $('#btn_view_column').attr('disabled', false);
+
+														        // 2 이면 비표준
+														        var sel = document.getElementById('id_obj_class');
+														        var opt = sel.options[sel.selectedIndex];
+
+														        id_obj_class = opt.value
+
+
+														        values = $row.find('td').map(function() {
+														                var $this = $(this);
+
+
+														                if ( $this.hasClass('actions') ) {
+														                        _self.rowSetActionsDefault( $row );
+														                        return _self.datatable.cell( this ).data();
+														                } else if ( $this.hasClass('modify') ) {
+														                        return $.trim( $this.find('input').val() );
+														                } else if ( $this.hasClass('change_reason') ) {
+														                        return $.trim( $this.find('input').val() );
+														                } else if ( $this.hasClass('yorn') ) {
+														                        return $.trim( $this.find('option:selected').text() );
+														                } else if ( $this.hasClass('change_list') ) {
+														                        return _self.datatable.cell( this ).data();
+														                } else if ( $this.hasClass('privacy_list') ) {
+														                        return $.trim( $this.find('option:selected').text() );
+														                } else if ( $this.hasClass('div') ) {
+														                        return _self.datatable.cell( this ).data();
+														                } else {
+														                        // 0 신규
+														                        if ( new_check == 0 ){
+														                                // 1 표준
+														                                if ( id_obj_class == 1 ) {
+														                                        return '';
+														                                }
+														                                // 2 비표준
+														                                else if ( id_obj_class == 2 ) {
+														                                        return $.trim( $this.find('input').val() );
+														                                }
+
+														                        }
+														                        else {
+														                                return _self.datatable.cell( this ).data();
+														                        }
+														                }
+														        });
+
+
+
+
+														        this.datatable.row( $row.get(0) ).data( values );
+
+
+														        $actions = $row.find('td.actions');
+
+
+														        if ( $actions.get(0) ) {
+														                this.rowSetActionsDefault( $row );
+														        }
+
+
+
+
+														        this.datatable.order([1,'asc']).draw(); // always show fields
+
+														},
+
+								rowSavedLoad: function(div,
+									                   column_id,
+												       col_comments,
+												       pk_yn,
+												       not_null,
+												       data_default,
+												       column_name,
+												       data_type,
+												       change_list,
+												       change_reason,
+												       privacy_list) {
+
+
+
+									if ( pk_yn == "0") {
+										pk_yn = "N"
+									} else if ( pk_yn == "1") {
+										pk_yn = "Y"
+									}
+
+									if ( not_null == "0") {
+										not_null = "N"
+									} else if ( not_null == "1") {
+										not_null = "Y"
+									}
+
+									column_id = parseInt(column_id)
+
+									var actions,
+										data,
+										$row;
+
+									if ( div == "신규")
+									{
+										actions = [
+											'<a href="#" class="hidden on-editing save-row btn-xs btn btn-default">저장</a>',
+											'<a href="#" class="hidden on-editing cancel-row btn-xs btn btn-default">취소</a>',
+											'<a href="#" class="on-default edit-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="수정">수정</a>',
+											'<a href="#" class="on-default standard-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="표준검사">표준적용</a>',
+											'<a href="#" class="on-default remove-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="삭제">삭제</a>'
+										].join(' ');
+									}
+									else if ( div == "기존")
+									{
+										actions = [
+											'<a href="#" class="hidden on-editing save-row btn-xs btn btn-default">저장</a>',
+											'<a href="#" class="hidden on-editing cancel-row btn-xs btn btn-default">취소</a>',
+											'<a href="#" class="on-default change-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="수정">수정</a>',
+											'<a href="#" class="on-default remove-mark-row btn-xs btn btn-default" data-toggle="tooltip" data-placement="top" title="삭제">삭제</a>'
+										].join(' ');
+									}
+
+									data = this.datatable.row.add([
+																	div,
+																	parseInt(column_id),
+																	col_comments,
+																	pk_yn,
+																	not_null,
+																	data_default,
+																	column_name,
+																	data_type,
+																	change_list,
+																	change_reason,
+																	privacy_list,
+																	actions ]);
+									$row = this.datatable.row( data[0] ).nodes().to$();
+
+
+
+									if ( div == "신규")
+									{
+										$row
+											.find( 'td:eq(0)' )
+											.addClass( 'div' )
+											.css('background-color', '#b3424a')
+											.css('color', 'white');
+									}
+									else if ( div == "기존")
+									{
+										$row
+											.find( 'td:eq(0)' )
+											.addClass( 'div' )
+									}
+
+									$row
+										.find( 'td:eq(1)' )
+										.addClass( 'div' );
+
+									$row
+										.find( 'td:eq(2)' )
+										.addClass( 'modify' );
+
+									$row
+										.find( 'td:eq(3)' )
+										.addClass( 'yorn' );
+
+									$row
+										.find( 'td:eq(4)' )
+										.addClass( 'yorn' );
+
+									$row
+										.find( 'td:eq(5)' )
+										.addClass( 'modify' );
+
+									$row
+										.find( 'td:eq(6)' )
+										.addClass( 'column_name' );
+
+									$row
+										.find( 'td:eq(7)' )
+										.addClass( 'data_type' );
+
+									$row
+										.find( 'td:eq(8)' )
+										.addClass( 'change_list' );
+
+									$row
+										.find( 'td:eq(9)' )
+										.addClass( 'change_reason' );
+
+									$row
+										.find( 'td:eq(10)' )
+										.addClass( 'privacy_list' );
+
+									$row
+										.addClass( 'adding' )
+										.find( 'td:last' )
+										.addClass( 'actions' );
+
+									// this.rowSave( $row );
+
+									var _self     = this,
+										$actions,
+										values    = [];
+
+									if ( $row.hasClass( 'adding' ) ) {
+										this.$addButton.removeAttr( 'disabled' );
+										$row.removeClass( 'adding' );
+
+										$('#checkToColumn').attr('disabled', false);
+										$('#btn_view_column').attr('disabled', false);
+									}
+
+									values = $row.find('td').map(function() {
+										var $this = $(this);
+
+										if ( $this.hasClass('actions') ) {
+											_self.rowSetActionsDefault( $row );
+											return _self.datatable.cell( this ).data();
+										}
+										else {
+											return _self.datatable.cell( this ).data();
+										}
+									});
+
+									this.datatable.row( $row.get(0) ).data( values );
+
+									$actions = $row.find('td.actions');
+									if ( $actions.get(0) ) {
+										this.rowSetActionsDefault( $row );
+									}
+
+									this.datatable.draw();
+
+									this.datatable.order([1,'asc']).draw(); // always show fields
+								},
+
+								rowRemove: function( $row ) {
+
+
+									// var _self = this,
+									// 	data;
+
+									data = this.datatable.row( $row.get(0) ).data();
+									column_no = Number(data[1])
+							      	console.log(column_no)
+
+									this.datatable.row( $row.get(0) ).remove().draw();
+
+									this.datatable.draw();
+
+
+
+
+
+
+							    	var dt = window.dt;
+
+							    	var in_data = dt
+							    	    .data();
+
+							    	if ( in_data.length == 0 ){
+							    		return;
+							    	}
+
+							      	parent_column_no = column_no - 1
+
+
+
+							      	dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+							       	    var in_data = this.data();
+
+							     		console.log("#")
+							     		console.log(in_data[1] + " " + parent_column_no)
+							     		if( in_data[1] == parent_column_no ){
+							     			in_data[8] = ""
+							     			this.data(in_data)
+								   		}
+
+							      	} )
+
+
+
+								},
+
+								rowSetActionsEditing: function( $row ) {
+									$row.find( '.on-editing' ).removeClass( 'hidden' );
+									$row.find( '.on-default' ).addClass( 'hidden' );
+								},
+
+								rowSetActionsDefault: function( $row ) {
+									$row.find( '.on-editing' ).addClass( 'hidden' );
+									$row.find( '.on-default' ).removeClass( 'hidden' );
+								}
+
+						};
+
+		$(function() {
+			EditableTable.initialize();
+		});
+
+	    config_select = {
+	        lineNumbers:true,
+			mode:  "text/x-sql",
+			theme: "base16-light",
+			smartIndent: true,
+			lineWrapping: true,
+	    };
+
+	    editor_select = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_code"), config_select);
+
+	    editor_select.setSize("100%","100%");
+
+	    jQuery('#id_table_name').hide();
+    	jQuery('#id_table_comments').hide();
+    	jQuery('#id_storage_cycle').hide();
+    	jQuery('#btn_handwork').hide();
+    	jQuery('#id_storage_cycle_column').hide();
+
+    	$('#btn_view_column').attr('disabled', true);
+    	$('#addToTable').attr('disabled', true);
+    	$('#btn_handwork').attr('disabled', true);
+    	$('#checkToColumn').attr('disabled', true);
+
+
+	    // updateupdate
+
+    	document.getElementById('id_id_tablelist').disabled = true;
+    	document.getElementById('id_id_pl_dev').disabled = true;
+    	document.getElementById('id_id_dblist').disabled = true;
+    	document.getElementById('id_owner').disabled = true;
+    	document.getElementById('id_obj_class').disabled = true;
+    	document.getElementById('id_obj_new').disabled = true;
+
+	    var sel = document.getElementById('id_obj_new');
+	    var opt = sel.options[sel.selectedIndex];
+	    select_val = opt.value
+
+
+
+	    if ( select_val == 2 ) {
+	    	jQuery('#id_table_name').show();
+	    	jQuery('#id_table_comments').show();
+	    	jQuery('#id_storage_cycle').show();
+	    	jQuery('#btn_handwork').show();
+	    	jQuery('#id_storage_cycle_column').show();
+
+	    	document.getElementById('id_id_tablelist').disabled = true;
+	    	document.getElementById('id_owner').disabled = true;
+	    }
+
+        $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaLoadReq' %}",
+	      data: { 'id_metareq' : '{{id_metareq}}',
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+
+
+
+	      		EditableTable.clear();
+	      		$("#div_db_type").html(json.db_type)
+
+	      		$.each(json.columns, function(i, val){
+	      		   EditableTable.rowSavedLoad(
+	      		   						 val[0],
+	      		   	                     parseInt(val[1]),
+	      		   						 val[2],
+	      		   						 val[3],
+	      		   						 val[4],
+	      		   						 val[5],
+	      		   						 val[6],
+	      		   						 val[7],
+	      		   						 val[8],
+	      		   						 val[9],
+	      		   						 val[10]
+	      		   						 )
+	      		});
+	             editor_select.setValue(json.script)
+
+  					var sel = document.getElementById('id_obj_class');
+  					var opt = sel.options[sel.selectedIndex];
+  					id_obj_class = opt.value
+  					if ( id_obj_class >= 3 ) {
+  						jQuery('#div_table').hide();
+	    				jQuery('#div_script').show();
+	    				editor_select.refresh();
+  					}
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+		    error: function(request, status, error){
+		    	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+		    },
+
+		})
+
+	})
+
+	var checkUnload = true;
+    $(window).on("beforeunload", function(){
+        if(checkUnload) return "이 페이지를 벗어나면 작성된 내용은 저장되지 않습니다.";
+    });
+
+    $("#btn_change_ok").click(function(){
+    	{#column_no = $("#modal_column_no").html()#}
+    	column_no = Number(column_no)
+
+    	var dt = window.dt;
+
+    	var data = dt
+    	    .data();
+
+    	if ( data.length == 0 ){
+    		return;
+    	}
+
+      	dt.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+       	   var data = this.data();
+
+     		if( data[1] == column_no ){
+	   			data[8] = "+ ┌ ASIS"
+	   		}
+
+      	   this.data(data)
+      	} )
+
+
+
+
+    	column_no = column_no + 1
+    	console.log(column_no)
+    	EditableTable.rowLoad(
+								 '변경',
+								 column_no, // column_no
+								 $("#modal_comments").val(), // comments
+								 $("#modal_pk_yn").val(),   // pk_yn
+								 $("#modal_not_null").val(),   // not null
+								 $("#modal_default").val(),    // data_default
+								 $("#modal_column_name").val(),   // column_name
+								 $("#modal_data_type").val(),    // data_type
+								 $("#modal_secu_yn").val()    // secu_yn
+
+							 )
+    	$("#btn_change_no").click()
+	})
+
+
+
+
+
+
+
+</script>
+
+
+{%endblock%}
+
+
+
+
+

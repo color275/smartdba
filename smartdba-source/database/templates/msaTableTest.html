@@ -1,0 +1,110 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>MSA 무형상품 테이블 형상관리 </h2>
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+
+	{% csrf_token %}
+
+
+	<a id="btn_sql" class="mb-xs mt-xs mr-xs btn btn-sm modal-basic btn-default" href="#btn_sql_modal">SQL확인</a>
+	<a href="https://docs.google.com/spreadsheets/d/1SDjOVFaM_zGFObbsBSvofFkcHtT51siQxp9LdZtXBQQ/edit#gid=0" target="_blank" class="mb-xs mt-xs mr-xs btn btn-sm btn-default" id="btn_apply" >신청서 열기</a>	
+		<!-- end: sidebar -->
+		
+
+		<!-- <header class="panel-heading">
+			<h2 class="panel-title"></h2>			
+		</header> -->
+		<div class="panel-body">
+
+			<div class="panel-body">
+				<div class="row">
+					<div class="col-sm-6">
+						<div class="mb-md">
+							<button id="addToTable" class="btn btn-primary">Add <i class="fa fa-plus"></i></button>
+						</div>
+					</div>
+				</div>
+				<table class="table table-bordered table-striped mb-none" id="datatable-editable">
+					<thead>
+						<tr>
+							<th>컬럼 순서</th>
+							<th>컬럼한글명</th>
+							<th>PK</th>
+							<th>NOT NULL(s)</th>
+							<th>컬럼영문명</th>
+							<th>컬럼 DataType</th>
+							<th>변경사항</th>
+							<th>Action</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="gradeA">
+							<td class="modify">Misc</td>
+							<td class="modify">NetFront 3.4</td>
+							<td class="modify">Embedded devices</td>
+							<td class="modify">Embedded devices</td>
+							<td>Embedded devices</td>
+							<td>Embedded devices</td>
+							<td>Embedded devices</td>
+							<td class="actions">
+								<a href="#" class="hidden on-editing save-row"><i class="fa fa-save"></i></a>
+								<a href="#" class="hidden on-editing cancel-row"><i class="fa fa-times"></i></a>
+								<a href="#" class="on-default edit-row"><i class="fa fa-pencil"></i></a>
+								<a href="#" class="on-default remove-row"><i class="fa fa-trash-o"></i></a>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		
+	</section>
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js' %}"></script>
+<script src="{% static 'assets/javascripts/tables/examples.datatables.editable.js' %}"></script>
+
+<script>
+	$(document).ready(function() {
+	 
+	 
+    
+</script>
+
+
+{%endblock%}
+
+
+
+
+

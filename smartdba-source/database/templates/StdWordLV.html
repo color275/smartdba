@@ -1,0 +1,530 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+{% block title %}Smart-단어{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        .td_fix_center {
+        	white-space: nowrap;
+        	text-align: center;
+        	vertical-align: middle;        	
+        }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>표준 단어 리스트</h2>
+	<div class="right-wrapper pull-right">
+		<ol class="breadcrumbs">
+			<li>				
+				{% if user.is_superuser %}
+				  <a href="http://{{ request.get_host }}/admin/database/stdword/" target="blank">&nbsp;
+				    <button type="button" class="btn btn-xs btn-success">Admin</button>
+				  </a>
+				{% endif %}
+			</li>
+		</ol>&nbsp;&nbsp;&nbsp;&nbsp;	
+	</div>
+	
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+
+
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}	
+
+	<header class="panel-heading" style="padding-bottom: 3px">
+		
+
+					<div class="form-group">						
+
+							<div class="form-inline">
+								<div class="form-group">
+
+									<div class="alert alert-info">
+										<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+										<strong>상품, 주문, 제작, 여부, 일시</strong> 등과 같이 의미를 갖는 최소 단위의 단어를 조회/신청하는 화면입니다. 자세한 설명은 <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30117937" target="blank" class="alert-link">[도움말]</a> 클릭하세요
+									</div>
+
+									<input class="form-control" id="txt_word" name="txt_word" style='width:300px' placeholder="상품" required>
+
+									<button id="btn_attr_select" type="button" class="btn btn-primary">단어 조회</button>
+									<a href="#btn_div_attr_modal" class="modal-with-form btn btn-primary" onload="f_clear()">단어 신청</a>
+
+								</div>
+							</div>
+
+
+					</div>
+
+
+					<div class="pull-left">
+						<div class="form-inline">
+							{{form.choice_tab_or_col}}
+						</div>
+					</div>
+					<br>
+					<div id="btn_div_attr_modal" class="modal-block modal-block-primary mfp-hide">
+						<section class="panel">
+							<header class="panel-heading">
+								<h2 class="panel-title">단어 신청</h2>
+							</header>
+							<div class="panel-body">
+
+								<form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate">
+
+									<div class="form-group">
+										<label class="col-sm-3 control-label">한글명<font color=red><b> *</b></font></label>
+										<div class="col-sm-9">
+											{{form.std_wd_kor}}
+										</div>
+										<br><br><br>
+										<label class="col-sm-3 control-label">영문FULL<font color=red><b> *</b></font></label>
+										<div class="col-sm-9">
+											{{form.std_wd_eng_ful}}
+										</div>
+										<br><br><br>
+										<label class="col-sm-3 control-label">영문약어<font color=red><b> *</b></font></label>
+										<div class="col-sm-9">
+											{{form.std_wd_eng}}
+											<a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30117937" target="blank">영문약어명 생성 가이드</a>
+										</div>
+
+										<br><br><br>
+										<label class="col-sm-3 control-label">설명<font color=red><b> *</b></font></label>
+										<div class="col-sm-9">
+											{{form.expl}}
+										</div>
+									</div>
+									<br>
+									<font color=red><div id="div_modal_error"></div></font>
+								</form>
+							</div>
+							<footer class="panel-footer">
+								<div class="row">
+									<div class="col-md-12 text-right">
+										<button id="btn_word_aceept_ok" type="button" class="btn btn-primary">요청</button>
+										<button id="btn_word_aceept_no" class="btn btn-default modal-dismiss">취소</button>
+									</div>
+								</div>
+							</footer>
+						</section>
+					</div>
+					<br><br>
+
+
+	</header>
+
+	<br>
+
+
+	<div id="div_result_select" style="display: none">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">단어 조회 결과</h2>
+			</header>
+			<div class="panel-body">
+				<div id="result_select"></div>
+			</div>
+		</section>
+	</div>
+
+	{% if req_word %}
+	<section class="panel">
+		<header class="panel-heading">
+			<h2 class="panel-title">현재 신청 중인 단어</h2>
+		</header>
+		<div class="panel-body">
+			<table class="table table-bordered table-striped mb-none csort" id="datatable-default1">
+                <thead>
+                    <tr>
+                        <th class="td_fix_center">한글단어명</th>
+                        <th class="td_fix_center">영문단어명</th>
+                        <th class="td_fix_center">영문FULL명</th>
+                        <th class="td_fix_center">설명</th>
+                        <th class="td_fix_center">신청자</th>
+                        <th class="td_fix_center">신청일</th>
+                        <th class="td_fix_center">승인여부</th>
+                        <th class="td_fix_center">반려사유</th>
+                        <th class="td_fix_center">취소</th>
+                        {% if request.user.is_superuser %}
+                        <th class="td_fix_center">승인/반려</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in req_word %}
+                        <tr>
+                            <td class="td_fix_center">{{data.std_wd_kor}}</td>
+                            <td class="td_fix_center">{{data.std_wd_eng}}</td>
+                            <td class="td_fix_center">{{data.std_wd_eng_ful}}</td>
+                            <td class="">{{data.expl}}</td>
+                            <td class="td_fix_center">{{data.id_reg_user}}</td>
+                            <td class="td_fix_center">{{data.reg_dtm|date:"Y/m/d"}}</td>
+                            <td class="td_fix_center"><font color=red><b>{{data.get_accept_yn_display}}</b></font></td>
+                            <td class="">{{data.reject_exp|default_if_none:"--"}}</td>
+                            <td class="td_fix_center">                            	
+                            	{% if request.user.id == data.id_reg_user.id %}
+                            	<a class="btn-sm btn btn-default" onclick="f_req_cancel('{{data.id}}')">취소</a>
+                            	{% endif %}                            	
+                           	</td>                           	
+                           	{% if request.user.is_superuser %}
+                           	<td class="td_fix_center">
+                            	{% if data.accept_yn == '1' %}
+                            	<a href="#btn_req_accept_modal" class="modal-with-form btn-xs btn btn-success" onclick="f_save_req_id('{{data.id}}')">Click</a>
+                            	{%endif%}
+                           	</td>
+                           	{% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+		</div>
+	</section>
+	<div id="div_req_accept" style="display: none"></div>
+	<div id="btn_req_accept_modal" class="modal-block modal-block-primary mfp-hide">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">승인합니까?</h2>
+			</header>
+			<div class="panel-body">
+				<form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate">
+					<div class="form-group">							
+						<label class="col-sm-3 control-label">Comment 또는<br>반려사유</label>
+						<div class="col-sm-9">
+							<textarea rows="5" class="form-control" id = "txt_aceept" name = "txt_aceept" placeholder="승인합니다 / .....이유로 반려합니다." ></textarea>
+						</div>
+					</div>
+					<br>
+				</form>
+			</div>
+			<footer class="panel-footer">
+				<div class="row">
+					<div class="col-md-12 text-right">
+						<button id="btn_aceept_ok" type="button" class="btn btn-primary">승인</button>
+						<button id="btn_aceept_reject" type="button" class="btn btn-danger">반려</button>
+						<button id="btn_aceept_no" class="btn btn-default modal-dismiss">취소</button>
+					</div>
+				</div>
+			</footer>
+		</section>
+	</div>
+	{% endif %}
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	function f_clear(){
+		$("#id_std_wd_kor").val() = ""
+		$("#id_std_wd_eng").val() = ""
+		$("#id_std_wd_eng_ful").val() = ""
+		$("#id_expl").val() = ""
+	}
+
+	$("#btn_aceept_ok").click(function(){
+
+		req_id = $("#div_req_accept").html();
+		var comment = $("#txt_aceept").val()
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'comment' : comment,
+	      		  'std_div' : 0, // 단어
+	      		  'req_div' : 0, // 승인
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)			      	
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	$("#btn_aceept_reject").click(function(){
+
+		req_id = $("#div_req_accept").html();
+		var comment = $("#txt_aceept").val()
+
+		if ( comment == "" ) {
+			alert("반려 메시지를 꼭 작성해주세요")
+			return
+		}
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'comment' : comment,
+	      		  'std_div' : 0, // 단어
+	      		  'req_div' : 2, // 반려
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)			      	
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	function f_save_req_id(req_id) {
+		$("#div_req_accept").html(req_id);
+	}
+
+
+
+	function f_req_cancel(req_id) {		
+		var comment = $("#txt_aceept").val()
+
+		if ( confirm('신청한 단어를 취소하겠습니까?') == false ) 
+			return
+		
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'std_div' : 0, // 단어
+	      		  'req_div' : 1, // 취소
+	      		  'comment' : comment,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)			      	
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	};
+
+
+	$("#btn_word_aceept_ok").click(function(){
+
+		$("#div_modal_error").html("")
+
+		var std_wd_kor = $("#id_std_wd_kor").val()
+		var std_wd_eng = $("#id_std_wd_eng").val()
+		var std_wd_eng_ful = $("#id_std_wd_eng_ful").val()
+		var expl = $("#id_expl").val()
+
+		if (std_wd_kor == "" || std_wd_eng == "" || std_wd_eng_ful == "" || expl == "")
+		{
+			$("#div_modal_error").html("모든 항목이 입력되어야 합니다.")
+			return;
+		}
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestNewWord' %}",
+	      data: {
+	      		  'std_wd_kor' : std_wd_kor,
+	      		  'std_wd_eng' : std_wd_eng,
+	      		  'std_wd_eng_ful' : std_wd_eng_ful,
+	      		  'expl' : expl,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_msg != "")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert("완료되었습니다.")
+			      	$("#btn_word_aceept_no").click();
+			      	location.reload();
+			      	
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	$("#txt_word").keyup(function(event) {
+	    if (event.keyCode === 13) {
+		    	$("#btn_attr_select").click();
+		    }
+	});
+
+	$("#btn_attr_select").click(function(){
+
+		var word = $("#txt_word").val()
+
+
+
+		var sel = document.getElementById('id_choice_tab_or_col');
+		var opt = sel.options[sel.selectedIndex];
+		choice_tab_or_col = opt.value
+
+		if (word == "" && choice_tab_or_col != 4) {
+			return;
+		}
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxSelectWord' %}",
+	      data: { 'word' : word,
+	      		  'choice_tab_or_col' : choice_tab_or_col,
+	      		  // 'id_dblist' : id_dblist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		console.log(json.word_data)
+
+
+	            $("#result_select").html('<table width="100%" id="datatable-default" class="table table-bordered table-striped mb-none csort" ><thead><tr><th>한글단어명</th><th>영문단어명</th><th>영문FULL명</th><th>설명</th></tr></thead></table>')
+
+	            const localDataTable = $('#datatable-default').DataTable({
+				            responsive: true,
+				            // "scrollX": true,
+				            // "scrollY": "200px",
+							"scrollCollapse": true,
+				            "pageLength": 100,
+				            "bFilter": true,
+				            "paging": true,
+				            "order" : false,
+				            data: json.word_data
+
+				});
+
+				$("#div_result_select").show()
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+
+
+
+
+</script>
+
+
+{%endblock%}
+
+
+
+
+
+

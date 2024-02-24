@@ -1,0 +1,513 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}Smart-DB정보{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        /*th, td { white-space: nowrap; }*/
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>GSSHOP 데이터베이스 목록 </h2>
+	<div class="right-wrapper pull-right">
+	  <ol class="breadcrumbs">
+	    <li>
+	      {% if user.is_superuser %}
+	        <a href="http://{{ request.get_host }}/admin/database/dbdetail/" target="blank">
+	          <button type="button" class="btn btn-xs btn-success">Admin</button>
+	        </a>
+	      {% endif %}
+	    </li>
+	  </ol>&nbsp;&nbsp;&nbsp;&nbsp;
+	</div>
+
+	<style type="text/css">		
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+		#datatable-default2_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+		
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+
+	{% csrf_token %}
+
+		<div class="alert alert-info">
+		  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+		  <strong>DB접속 시 반드시 <font color="red">개인 계정 ( I_*** )을 사용</font>해야 하며, <font color="red">개인정보 조회는 모니터링 및 로깅</font> 됩니다
+		  	<li>공용 계정 사용 금지</li>
+		  	<li>모든 개인정보는 마스킹</li>
+		  </strong>
+		</div>
+
+		{% if user.is_superuser %}
+		<div class="pull-right">
+		<a id="btn_sync" class="btn-sm btn btn-primary">동기화</a>		
+		<a href="https://docs.google.com/spreadsheets/d/15sLsy8eW42Hk0kPA3baFRCTLJbQyqDiPjScfzzJEMDY/edit#gid=140860747" target="_blank" class="btn-sm btn btn-primary" id="btn_apply" >구글시트 열기</a>	
+		</div>
+		{%endif%}
+
+		<div class="tabs">
+				<ul class="nav nav-tabs">
+					<li class="active">
+						<a href="#approval_db" data-toggle="tab">요약</a>
+					</li>
+					{%comment%}
+					<li>
+						<a href="#part_db" data-toggle="tab">요약</a>
+					</li>
+					{%endcomment%}
+					<li>
+						<a href="#all_db" data-toggle="tab">상세</a>
+					</li>
+				</ul>
+				<div class="tab-content">
+					
+					<div id="approval_db" class="tab-pane active">						
+						<!-- <div>		
+							{% for data in header %}
+								<label for="chk{{forloop.counter0}}"><input  type="checkbox" checked id="chk{{forloop.counter0}}" class="toggle-vis" data-column="{{forloop.counter0}}">{{data}}</label>&nbsp;
+							{% endfor %}					
+						</div>		 -->
+						<div class="panel-body">				
+							<!-- <table class="table table-bordered table-striped mb-none" id="datatable-details-databaselist"> -->
+							
+							<table class="table table-bordered table-striped mb-none" id="datatable-default2" style="width: 100%">
+								<thead>					
+									<tr>
+									<th style="text-align: center;vertical-align: middle;">#</th>
+									<th style="text-align: center;vertical-align: middle;">개발/운영</th>
+									<th style="text-align: center;vertical-align: middle;">DB용도<br><font size=1>(클릭 시 접속 정보 클립보드로 복사)</font></th>
+									<th style="text-align: center;vertical-align: middle;">고객정보<br><font size=1>(DBSafer 적용됨)</font></th>
+									<th style="text-align: center;vertical-align: middle;">임직원정보</th>									
+									<th style="text-align: center;vertical-align: middle;">DB명</th>									
+									<th style="text-align: center;vertical-align: middle;">접속IP</th>									
+									<th style="text-align: center;vertical-align: middle;">접속PORT</th>									
+									<th style="text-align: center;vertical-align: middle;">DBMS종류</th>									
+									<th style="text-align: center;vertical-align: middle;">담당자</th>									
+								</tr>
+								</thead>
+								<tbody>
+									{% for data in approval_db %}
+										<tr >	
+										    <td style="text-align: center;"></td>											
+										    <td style="text-align: center;">{{data.sync_oper_cd}}</td> 
+										    <td>
+										    	{% if data.tns_desc != None and data.id_dblist.id_dbtype.id == 1 %}
+										    	<p style="display: none" id="id_{{data.id}}">{{data.tns_desc}}</p><a href="#" onclick="copyToClipboard('id_{{data.id}}')">{{data.id_dblist.db_use}}</a>
+										    	{% else %}
+										    	{{data.id_dblist.db_use}}
+										    	{% endif %}
+										    </td>										    
+										    	
+											<td style="text-align: center;">{%if data.id_dblist.privacy_yn == "1" and data.oper_cd.id == 3 %} <font color="red"><i class="fa fa-star" aria-hidden="true"></i></font>{%endif%}</td>
+											<td style="text-align: center;">{%if data.id_dblist.emp_privacy_yn == "1" and data.oper_cd.id == 3 %} <font color="blue"><i class="fa fa-star" aria-hidden="true"></i></font>{%endif%}</td>
+											<td style="text-align: center;">{{data.sync_db_nm}}</td>
+											<td style="text-align: center;">{{data.sync_svc_ip}}</td>
+											<td style="text-align: center;">{{data.sync_db_port}}</td>
+											<td>{{data.sync_db_type}}</td>							
+											<td>{{data.id_dblist.id_manager.first_name|default_if_none:"--"}}</td>						
+										</tr>
+									{% endfor %}
+								</tbody>
+								<!-- <tfoot>
+										<th></th>
+						         {% for data in header %}
+										<th>{{data}}</th>
+								{% endfor %}
+						       </tfoot> -->
+							</table>
+						</div>
+					</div>
+					{% comment %}
+					<div id="part_db" class="tab-pane">											
+						<div class="panel-body">									
+							
+							<table class="table table-bordered table-striped mb-none" id="datatable-default1" style="width: 100%">
+								<thead>					
+									<tr>
+									<th style="text-align: center;">#</th>
+									<th style="text-align: center;">DB용도</th>
+									<th style="text-align: center;">고객정보</th>
+									<th style="text-align: center;">임직원정보</th>									
+									<th style="text-align: center;">DBMS종류</th>									
+									<th style="text-align: center;">DBMS버전</th>									
+									<th style="text-align: center;">DBMS위치</th>									
+									<th style="text-align: center;">담당부서</th>									
+									<th style="text-align: center;">담당자</th>									
+									<th style="text-align: center;">EOS</th>									
+									<th style="text-align: center;">EOS날짜</th>									
+								</tr>
+								</thead>
+								<tbody>
+									{% for data in ds_db_detail %}
+										<tr >	
+										    <td style="text-align: center;"></td>																				
+											<td><a href="#btn_database_detail" class="modal-with-form" onclick="set_val('{{data.id_dblist.id}}','{{data.id_dblist.db_use}}')">{{data.id_dblist.db_use}}</a></td>
+											<td style="text-align: center;">{%if data.id_dblist.privacy_yn == "1" %} <font color="red"><i class="fa fa-star" aria-hidden="true"></i></font>{%endif%}</td>
+											<td style="text-align: center;">{%if data.id_dblist.emp_privacy_yn == "1" %} <font color="blue"><i class="fa fa-star" aria-hidden="true"></i></font>{%endif%}</td>
+											<td>{{data.id_dblist.id_dbtype}}</td>							
+											<td>{{data.id_dblist.db_ver|default_if_none:"--"}}</td> 
+											<td style="text-align: center;">{{data.id_dblist.id_dbposition|default_if_none:"--"}}</td> 
+											<td>{{data.id_dblist.id_manager.last_name|default_if_none:"--"}}</td>
+											<td>{{data.id_dblist.id_manager.first_name|default_if_none:"--"}}</td> 
+											<td style="text-align: center;">{{data.id_dblist.get_eos_yn_display}}</td>
+											<td>{{data.id_dblist.eos_dt|date:"Y.m.d"|default_if_none:"--"}}</td>		
+										</tr>
+									{% endfor %}
+								</tbody>								
+							</table>
+						</div>
+					</div>
+					{% endcomment %}
+					<div id="all_db" class="tab-pane">
+						<table class="table table-bordered table-striped mb-none" id="datatable-default" style="width: 100%">
+							<thead>					
+								<tr>
+									<th style="text-align: center;">#</th>
+									<th style="text-align: center;">DB용도</th>
+									<th style="text-align: center;">노드번호</th>
+									<th style="text-align: center;">개발/운영</th>									
+									<th style="text-align: center;">DB명</th>									
+									<th style="text-align: center;">Hostname</th>									
+									<th style="text-align: center;">서버IP</th>									
+									<th style="text-align: center;">서비스IP</th>									
+									<th style="text-align: center;">접속PORT</th>									
+									<th style="text-align: center;">HA유형</th>	
+									<th style="text-align: center;">DBMS종류</th>									
+									<th style="text-align: center;">DBMS버전</th>																	
+								</tr>
+							</thead>
+							{% for data in all_db %}
+							<tr>
+								<td style="text-align: center;"></td>
+								<td>{{data.id_dblist.db_use}}</td>
+								<td>{{data.sync_db_order}}</td>
+								<td>{{data.sync_oper_cd}}</td>								
+								<td>{{data.sync_db_nm}}</td>																
+								<td>{{data.sync_hostnm}}</td>								
+								<td>{{data.sync_srv_ip}}</td>								
+								<td>{{data.sync_svc_ip}}</td>								
+								<td>{{data.sync_db_port}}</td>								
+								<td>{{data.sync_hacase}}</td>	
+								<td>{{data.sync_db_type}}</td>							
+								<td>{{data.sync_db_version}}</td> 							
+							</tr>
+							{% endfor %}
+						</table>
+
+					</div>
+				</div>
+			</div>
+		</div>
+		
+			
+	
+
+
+
+	
+	<div id="btn_database_detail" class="modal-block modal-block-full mfp-hide">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title"><span id="div_db_use"></span> 정보</h2>
+			</header>
+			<div class="panel-body">
+				<form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate">
+					
+					<div class="form-group">
+						<div id="db_detail">
+						</div>
+					</div>
+					
+				</form>
+			</div>
+			<footer class="panel-footer">
+				<div class="row">
+					<div class="col-md-12 text-right">
+						<button id="btn_aceept_no" class="btn btn-default modal-dismiss">닫기</button>
+					</div>
+				</div>
+			</footer>
+		</section>
+	</div>
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	function copyToClipboard(elementId) {
+
+	  // 글을 쓸 수 있는 란을 만든다.
+	  var aux = document.createElement("input");
+
+	  // 지정된 요소의 값을 할당 한다.
+	  aux.setAttribute("value", document.getElementById(elementId).innerHTML);
+
+	  // bdy에 추가한다.
+	  document.body.appendChild(aux);
+
+	  // 지정된 내용을 강조한다.
+	  aux.select();
+
+	  // 텍스트를 카피 하는 변수를 생성
+	  document.execCommand("copy");
+
+	  // body 로 부터 다시 반환 한다.
+	  document.body.removeChild(aux);
+
+	  alert('접속 정보가 클립보드에 복사되었습니다')
+
+	}	
+
+	$("#btn_sync").click(function(){
+
+		if (!confirm('동기화 시작하겠습니까?')) return false
+
+		console.log("click btn_sync")
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxDatabaseListSyncWithGoogleSheet' %}",
+	      data: { 'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      		if ( json.message == "" ){
+		      		alert("동기화 완료")	      			
+		      		location.reload();
+	      		}
+	      		else {
+	      			alert(json.message)
+	      			location.reload();
+	      		}
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	});
+
+	function set_val(id_dblist, db_use) {		
+
+		$("#div_db_use").html(db_use)
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxDatabaseDetail' %}",
+	      data: { 'id_dblist' : id_dblist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		
+
+	      		html_td = ""
+	      		$.each(json.all_dblist, function(i, val) { 
+	      			html_td += "<tr>"
+	      			$.each(val, function(i, v) {
+	      				if ( i == 0 ) {
+		      				html_td += "<td style='width:10%; text-align: center' bgcolor=#CCCCFF><b>" + v + "</b></td>"
+		      			}
+		      			else {
+		      				html_td += "<td>" + v + "</td>"
+		      			}
+	      			})
+	      			html_td += "</tr>"
+
+	      		});
+
+	      		htmlTable = '<table class="table table-bordered" >' + html_td + '</table>';
+
+	      		$("#db_detail").html(htmlTable)
+	    
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});	    
+	};
+
+	
+
+	$(document).ready(function() {
+
+
+
+		// $('#datatable-default tfoot th').each( function (i) {
+	 //        var title = $('#datatable-default thead th').eq( $(this).index() ).text();
+	 //        $(this).html( '<input type="text" class="form-control input-sm" placeholder="Search" '+title+'" data-index="'+i+'" />' );
+	        
+
+	 //    } );
+		const table = $('#datatable-default').DataTable({
+	 		        responsive: true,
+	 		        // "scrollX": true,
+	 				// "scrollCollapse": true,
+	 		        "pageLength": 200,
+	 		        "order": [],
+	 		        "bFilter": true,
+	 		        // "paging": true,
+	 		        //dom: 'Bfrtipl',	       
+	 		        // dom: 'Brtipl',	       
+	 		        // buttons: [
+	 		        //     {
+	 		        //     extend: 'excelHtml5',
+	 		        //     exportOptions: {
+	 	         //            columns: ':visible'
+	 	         //        },
+	 		        //     filename: "SmartDBA_데이터베이스정보",
+	 		        //     title: '',
+	 		        //     className: 'btn btn-success btn-xs'
+	 		        // },
+	 		        // ],
+	 		        // "scrollX": true,
+	 		        // "scrollY": "500px",
+	 		        // "columnDefs": [ {
+	 		        //            "searchable": false,
+	 		        //            "orderable": false,
+	 		        //            "targets": 0
+	 		        //        } ],	        
+
+	 		    });
+
+		const table1 = $('#datatable-default1').DataTable({
+	        responsive: true,
+	        "pageLength": 200,
+	        "order": [],
+	        "bFilter": true,
+
+	    });
+
+	    const table2 = $('#datatable-default2').DataTable({
+	        responsive: true,
+	        "pageLength": 200,
+	        "order": [],
+	        "bFilter": true,
+
+	    });
+
+
+		// table.columns.adjust().draw();
+
+	    table.on( 'order.dt search.dt', function () {
+	            table.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+	                cell.innerHTML = i+1;
+	            } );
+	        } ).draw();
+
+	   	table1.on( 'order.dt search.dt', function () {
+	            table1.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+	                cell.innerHTML = i+1;
+	            } );
+	        } ).draw();
+
+	   	table2.on( 'order.dt search.dt', function () {
+	            table2.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+	                cell.innerHTML = i+1;
+	            } );
+	        } ).draw();
+
+
+
+	 //    $( table.table().container() ).on( 'keyup', 'tfoot input', function () {
+	 //            table
+	 //                .column( $(this).data('index') )
+	 //                .search( this.value )
+	 //                .draw();
+	 //        } );
+
+
+
+	 //    $('input.toggle-vis').on( 'change', function (e) {
+
+	 //            e.preventDefault();
+	     
+	 //            // Get the column API object
+	 //            var column = table.column( $(this).attr('data-column') );	            
+	     
+	 //            // Toggle the visibility
+	 //            column.visible( ! column.visible() );
+	 //        } );
+	   	
+
+	});
+
+	// $('.tabs a').click(function (e) {
+	//         // e.stopImmediatePropagation();	        
+	//         $(this).tab('show');
+	//         table.columns.adjust().draw();
+	//         // schemaDataTable.columns.adjust().draw();
+ //    });
+    
+</script>
+
+
+
+
+{%endblock%}
+
+
+
+
+

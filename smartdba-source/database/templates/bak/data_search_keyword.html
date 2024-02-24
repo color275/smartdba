@@ -1,0 +1,299 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+
+	<link rel="stylesheet" href="{% static 'assets/vendor/select2/select2.css' %}" />
+	<link rel="stylesheet" href="{% static 'assets/stylesheets/theme.css' %}" />
+
+	<!-- 공통 -->
+	<link rel="stylesheet" href="{% static 'assets/stylesheets/skins/default.css' %}" />
+
+</head>
+
+<header class="page-header">
+	<h2>궁금한 데이터를 찾아보세요</h2>
+
+	
+</header>
+
+
+
+
+<!-- start: page -->
+<form method="POST" action="{% url 'dataSearchKeyword' %}" >
+	{% csrf_token %}
+
+	<br>
+	<section class="panel">
+		<header class="panel-heading">
+			<div class="search-control-wrapper">
+					<div class="form-group">
+
+							<div class="input-group">
+							<select data-plugin-selectTwo class="form-control populate"  id="search_select" name="search" data-plugin-options='{ "minimumInputLength": 2 }' onclick="document.getElementById('search_button').submit()" >
+								<optgroup label="" >
+								<option  selected="selected">검색해보세요</option>
+								</optgroup>
+								<!-- <optgroup label="" >
+									<option value="AK"></option>
+								</optgroup> -->
+								{% for tab_comments, col_comments in dataset_dict.items %}
+									<optgroup label="{{tab_comments}}">
+									{% for comments in col_comments %}
+
+									    <!-- DATA.30 -->
+										<option value="{{comments.2}},{{comments.1}}" >{{comments.0}}</option>
+									{% endfor %}
+									</optgroup>
+									{% endfor %}
+							</select>
+							<span class="input-group-btn">
+										<button class="btn btn-primary" id="search_button" type="submit">Search</button>
+							</span>
+							</div>
+					</div>
+			</div>
+
+		</header>
+
+
+
+		{% if dataset %}
+
+
+				<!-- 컬럼 설명 -->
+				<section class="panel">
+							<header class="panel-heading">
+								<div class="row">
+									<div class="col-md-9 mt-md">
+										<h2 class="h2 mt-none mb-sm text-dark text-bold">{{dataset.col_comments}}</h2>
+										<h5 class="h5 m-none text-dark text-bold">{{dataset.domain_name}} <i class="fa  fa-chevron-right" aria-hidden="true"></i> {{dataset.comments}} </h5>
+									</div>
+									<div class="col-md-3 text-right"> <!-- mt-md mb-md -->
+											<i class="fa fa-male" aria-hidden="true"></i>&nbsp;&nbsp;{{dataset.it_manager_name}} ({{dataset.it_manager_team}})
+											<br/>
+											<i class="fa fa-mobile" aria-hidden="true"></i>&nbsp;&nbsp;&nbsp;010-7572-2752
+											<br/>
+											<i class="fa fa-comments-o" aria-hidden="true"></i>&nbsp;lee.ch@gsshop.com
+									</div>
+								</div>
+							</header>
+							<div class="panel-body">
+								<div class="bill-info">
+									<div class="row">
+										<div class="col-md-12">
+											<div class="bill-to">
+												<p class="h5 mb-xs text-success text-semibold"><i class="fa   fa-check-square-o" aria-hidden="true"></i> 데이터 설명: </p>
+												<ul>
+													<li><b>{{dataset.column_explain|default_if_none:dataset.col_comments|linebreaks}}</b></li>
+												</ul>
+											</div>
+
+										</div>
+
+									</div>
+								</div>
+
+								<div class="table-responsive">
+									<p class="h5 mb-xs text-success text-semibold"><i class="fa   fa-check-square-o" aria-hidden="true"></i> 데이터 상세</p>
+										<ul>
+											<li><b>저장되어 있는 위치</b> : {{dataset.db_use}} <a href="#" dataset-toggle="tooltip" data-placement="top" title="클릭: 접속 방법을 확인하세요"><i class="fa fa-external-link"></i></a></li>
+											<li><b>데이터 수정 시간</b> : 실시간/배치(1시간 주기) </li>
+											<li><b>테이블 명(한글/영문)</b> : {{dataset.comments}} / {{dataset.table_name}}</li>
+											<li><b>컬럼 명(한글/영문)</b> : {{dataset.col_comments}} / {{dataset.column_name}}</li>
+											<li><b>컬럼 유형</b> : {{dataset.column_type_value}} {%if dataset.column_type != "0" %}/ {{dataset.code_key}}{%endif%}</li>
+										</ul>
+								</div>
+
+								<br>
+
+								<div class="table-responsive">
+									<p class="h5 mb-xs text-success text-semibold"><i class="fa fa-check-square-o" aria-hidden="true"></i> SQL 샘플 (결과를 확인해보세요)</p>
+									<div class="form-group">
+										<!-- <label class="col-md-2 trol-label" for="textareaDefault">HTML Editor</label> -->
+										<div>
+										<!-- 	<textarea rows="1" class="form-control" id="codemirror_sql_code" data-plugin-codemirror='{"indentUnit":7}' data-plugin-options='{ "mode": "text/x-sql", "theme": "base16-light","lineNumbers": false, "indentUnit": 3}'>{{dataset.sql_text}}</textarea> -->
+
+											<pre><textarea  class="form-control" id="codemirror_sql_code1">{{dataset.sql_text}}</textarea></pre>
+
+										</div>
+									</div>
+									<!-- <pre><code class="sql">{{dataset.sql_text}}</code></pre> -->
+								</div>						
+
+
+								<div class="text-right">
+									<a href="#" class="btn btn-primary"><i class="fa fa-refresh"></i> 초기화</a>
+									<a href="#" class="btn btn-primary"><i class="fa fa-download"></i> 저장</a>
+									<a href="#" class="btn btn-primary"><i class="fa fa-upload"></i> 불러오기</a>
+									&nbsp;&nbsp;
+									<!-- <a href="#" class="btn btn-warning"><i class="fa  fa-play-circle"></i> SQL실행</a>
+									<a class="mb-xs mt-xs mr-xs modal-sizes btn btn-default" href="#modalLG">Large</a> -->
+									<a class="mb-xs mt-xs mr-xs modal-sizes btn btn-warning" href="#modalLG"> SQL실행</a>
+									<div id="modalLG" class="modal-block modal-block-lg mfp-hide">
+										<section class="panel">
+																<header class="panel-heading">
+															
+																	<h2 class="panel-title">SQL결과</h2>
+																</header>
+																<div class="panel-body">
+																	<table class="table table-bordered table-striped mb-none" id="datatable-default">
+																		<thead>
+																			<tr>
+																				<th>Rendering engine</th>
+																				<th>Browser</th>
+																				<th>Platform(s)</th>
+																				<th class="hidden-phone">Engine version</th>
+																				<th class="hidden-phone">CSS grade</th>
+																			</tr>
+																		</thead>
+																		<tbody>
+																			<tr class="gradeX">
+																				<td>Trident</td>
+																				<td>Internet
+																					Explorer 4.0
+																				</td>
+																				<td>Win 95+</td>
+																				<td class="center hidden-phone">4</td>
+																				<td class="center hidden-phone">X</td>
+																			</tr>
+																			<tr class="gradeC">
+																				<td>Trident</td>
+																				<td>Internet
+																					Explorer 5.0
+																				</td>
+																				<td>Win 95+</td>
+																				<td class="center hidden-phone">5</td>
+																				<td class="center hidden-phone">C</td>
+																			</tr>
+																			<tr class="gradeA">
+																				<td>Trident</td>
+																				<td>Internet
+																					Explorer 5.5
+																				</td>
+																				<td>Win 95+</td>
+																				<td class="center hidden-phone">5.5</td>
+																				<td class="center hidden-phone">A</td>
+																			</tr>
+																			<tr class="gradeA">
+																				<td>Trident</td>
+																				<td>Internet
+																					Explorer 6
+																				</td>
+																				<td>Win 98+</td>
+																				<td class="center hidden-phone">6</td>
+																				<td class="center hidden-phone">A</td>
+																			</tr>
+																			<tr class="gradeA">
+																				<td>Trident</td>
+																				<td>Internet Explorer 7</td>
+																				<td>Win XP SP2+</td>
+																				<td class="center hidden-phone">7</td>
+																				<td class="center hidden-phone">A</td>
+																			</tr>
+																			<tr class="gradeA">
+																				<td>Trident</td>
+																				<td>AOL browser (AOL desktop)</td>
+																				<td>Win XP</td>
+																				<td class="center hidden-phone">6</td>
+																				<td class="center hidden-phone">A</td>
+																			</tr>
+																			<tr class="gradeA">
+																				<td>Gecko</td>
+																				<td>Firefox 1.0</td>
+																				<td>Win 98+ / OSX.2+</td>
+																				<td class="center hidden-phone">1.7</td>
+																				<td class="center hidden-phone">A</td>
+																			</tr>
+																			<tr class="gradeA">
+																				<td>Gecko</td>
+																				<td>Firefox 1.5</td>
+																				<td>Win 98+ / OSX.2+</td>
+																				<td class="center hidden-phone">1.8</td>
+																				<td class="center hidden-phone">A</td>
+																			</tr>
+																			<tr class="gradeA">
+																				<td>Gecko</td>
+																				<td>Firefox 2.0</td>
+																				<td>Win 98+ / OSX.2+</td>
+																				<td class="center hidden-phone">1.8</td>
+																				<td class="center hidden-phone">A</td>
+																			</tr>										
+																		</tbody>
+																	</table>
+																</div>
+											<footer class="panel-footer">
+												<div class="row">
+													<div class="col-md-12 text-right">
+														<!-- <button class="btn btn-primary modal-confirm">Confirm</button> -->
+														<button class="btn btn-default modal-dismiss">닫기</button>
+													</div>
+												</div>
+											</footer>
+										</section>
+									</div>
+									
+
+
+								</div>
+						</div>
+						</section>
+
+
+		{% endif %}
+	</section>
+</form>
+<!-- end: page -->
+
+
+
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-browser-mobile/jquery.browser.mobile.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap/js/bootstrap.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+<!-- Specific Page Vendor -->
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/extras/TableTools/js/dataTables.tableTools.min.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+
+<!-- Theme Base, Components and Settings -->
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+
+<!-- Theme Custom -->
+<script src="{% static 'assets/javascripts/theme.custom.js' %}"></script>
+
+<!-- Theme Initialization Files -->
+<script src="{% static 'assets/javascripts/theme.init.js' %}"></script>
+
+<!-- Examples -->
+<script src="{% static 'assets/javascripts/tables/examples.datatables.default.js' %}"></script>
+<script src="{% static 'assets/javascripts/tables/examples.datatables.row.with.details.js' %}"></script>
+<script src="{% static 'assets/javascripts/tables/examples.datatables.tabletools.js' %}"></script>
+
+
+
+{%endblock%}
+
+
+
+
+
+

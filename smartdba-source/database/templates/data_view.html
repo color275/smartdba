@@ -1,0 +1,805 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}Smart-데이터{% endblock %}
+
+
+
+
+
+{%block content %}
+
+<head>
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+		.buttons-excel {
+			background-color: #4CAF50; /* Green */
+			color: white;
+			text-align: center;
+			text-decoration: none;
+			display: inline-block;
+		}
+		div.dt-buttons{
+		position:relative;
+		float:right;
+		}
+
+		pre {
+		            overflow-x: auto;
+		            white-space: pre-wrap;
+		            white-space: -moz-pre-wrap;
+		            white-space: -pre-wrap;
+		            white-space: -o-pre-wrap;
+		            word-wrap: break-word;
+		            background-color: #FFFFFF;
+		            border: 0px dashed #FFFFFF;
+		            padding-top: 0px;
+                    padding-bottom: 0px;
+                    padding-left: 0px;
+                    padding-right: 0px;
+                    float: none;
+                    margin: 0px;
+		         }
+
+		.wrap-loading{ /*화면 전체를 어둡게 합니다.*/
+		    position: fixed;
+		    left:0;
+		    right:0;
+		    top:0;
+		    bottom:0;
+		    background: rgba(0,0,0,0.2); /*not in ie */
+		    filter: progid:DXImageTransform.Microsoft.Gradient(startColorstr='#20000000', endColorstr='#20000000');    /* ie */
+
+		}
+
+	    .wrap-loading div{ /*로딩 이미지*/
+	        position: fixed;
+	        top:50%;
+	        left:50%;
+	        margin-left: -21px;
+	        margin-top: -21px;
+	    }
+
+    	.wrap-help{ /*화면 전체를 어둡게 합니다.*/
+    	    position: fixed;
+    	    left:0;
+    	    right:0;
+    	    top:0;
+    	    bottom:0;
+    	    background: rgba(0,0,0,0.8); /*not in ie */
+    	    filter: progid:DXImageTransform.Microsoft.Gradient(startColorstr='#20000000', endColorstr='#20000000');    /* ie */
+
+    	}
+
+        .wrap-help div{ /*로딩 이미지*/
+            position: fixed;
+            top:50%;
+            left:50%;
+            margin-left: -21px;
+            margin-top: -21px;
+        }
+
+	    .display-none{ /*감추기*/
+	        display:none;
+	    }
+	</style>
+
+</head>
+
+
+
+<form method="POST" action="#" id="data_view">
+{%csrf_token%}
+
+	<section role="main">
+		<header class="page-header">
+			<h2>데이터 확인</h2>
+			<div class="right-wrapper pull-right">
+				<ol class="breadcrumbs">
+					<li>
+						{% if user.is_superuser %}
+							<a href="http://{{ request.get_host }}/admin" target="blank">
+								<button type="button" class="btn btn-xs btn-success">Admin</button>
+							</a>
+						{% endif %}
+					</li>
+				</ol>&nbsp;&nbsp;&nbsp;&nbsp;
+			</div>
+		</header>
+		<div class="row">
+			<div class="col-md-2">
+				<section class="panel">
+					<header class="panel-heading">
+						<div class="panel-actions">
+							<a href="#" class="fa fa-caret-down"></a>
+							<a href="#" class="fa fa-times"></a>
+						</div>
+						<h2 class="panel-title">공유된 데이터</h2>
+					</header>
+					<div class="panel-body">
+						<div id="jstree_dataview">
+							<ul>
+								{% for k in ds_data_tree_dict %}
+									<li id="{{k.last_name}}" data-jstree='{"opened" : true, "icon" : "{% static "assets/images/jstree3.png" %}" }' class="click_jstree_dataview folder" >
+										{{k.last_name}}
+									</li>
+								{% endfor %}
+							</ul>
+						</div>
+					</div>
+				</section>
+			</div>
+			<div id="div_showSql" class="col-md-10" style="display: none">
+				<section class="panel">
+					<header class="panel-heading">
+						<div class="panel-actions">
+							<a href="#" class="fa fa-caret-down"></a>
+							<a href="#" class="fa fa-times"></a>
+						</div>
+						<h2 class="panel-title"><span id="div_data_title"></span><input type="hidden" id="data_title" name="data_title"></span></h2>
+					</header>
+					<div class="panel-body" class="row">
+
+						<table class="table mb-none" border=0>
+							<tr>
+								<td style="width: 15%; vertical-align: top;">
+									<span class="text-primary"><b></i># 데이터 설명</b></span>
+								</td>
+								<td colspan="5">
+									<div id="div_data_explain">...</div><br>
+								</td>
+							</tr>
+							<tr>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 요청 직원</b></span>
+								</td>
+								<td>
+									<span id="div_req_name">...</span><br>
+								</td>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 등록자</b></span>
+								</td>
+								<td style="width: 20%">
+									<span id="div_reg_name">...</span><br>
+								</td>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 보안 승인</b></span>
+								</td>
+								<td style="width: 5%">
+									<span id="div_prov_yn1">...</span><br>
+								</td>
+							</tr>
+							<tr>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 수정 가능 직원</b></span>
+								</td>
+								<td>
+									<span id="div_edit_name">...</span><br>
+								</td>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 수정자</b></span>
+								</td>
+								<td style="width: 20%">
+									<span id="div_mod_name">...</span><br>
+								</td>
+								<td style="width: 10%">
+									<span class="text-primary"><b># 성능 승인</b></span>
+								</td>
+								<td style="width: 5%">
+									<span id="div_prov_yn2">...</span><br>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									<span class="text-primary"><b># 부가정보</b></span>
+								</td>
+								<td colspan="5">
+									<li><span id="div_db_type"></span></li>
+									<li><span id="div_db_use">...</span></li>
+									<li><span id="div_execute_cnt">...</span></li>
+									<li><span id="div_time">...</span></li>
+									<li><span id="div_privacy_yn">...</span></li>
+								</td>
+							</tr>
+							<tr id="tr_input" style="display: none">
+								<td>
+									<span class="text-primary"><b># 입력값</b></span>
+								</td>
+								<td colspan="3">
+									<div class="form-group">
+										<div class="row">
+											<div id="div_inputs">
+											</div>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr id="tr_showSql" style="display: none">
+								<td>
+									<span class="text-primary"><b># 관련SQL</b> :</span>
+								</td>
+								<td colspan="3">
+									<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control" style="height: 100%" id="codemirror_sql_code" name="text_sql" ></textarea></pre>
+								</td>
+							</tr>
+						</table>
+							<input id="div_sql_id" name="div_sql_id" type="hidden">
+							<input id="div_id_dblist" name="div_id_dblist" type="hidden">
+
+						
+						<div class="pull-right">
+
+							<span id="div_btn_diable"></span>
+							<button id="btn_dataResult" type="button" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-primary"> <i class="fa fa-youtube-play"></i> 데이터 확인</button>
+							<button id="btn_download" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-primary" type="input" formaction="{% url 'ajaxCreateDDLLVErdDownload' %}" > <i class="fa fa-youtube-play"></i> 엑셀 다운로드</button>
+							<!-- <button id="btn_datadownload" type="button" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-primary"> <i class="fa fa-youtube-play"></i> 엑셀 다운로드</button> -->
+							<button id="btn_showSql" type="button" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-info"> <i class="fa fa-question-circle"></i> SQL 보기</button>
+							<a id="btn_editSql" type="button" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-info" style="display: none"> <i class="fa fa-question-circle"></i> SQL 수정</a>
+							<button id="btn_delSql" type="input" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-info" style="display: none" formaction="{% url 'DataListDelView' %}" onclick="if (confirm('정말 삭제하시겠습니까?')) commentDelete(1); return false"> <i class="fa fa-question-circle"></i> SQL 삭제</button>
+						</div>
+						<br><br><br>
+						<div class="pull-left">
+							<b><span id="div_error" style="display: none"  class="text-success"></span></b>
+						</div>
+
+						<div id="divDataResult" >
+						</div>
+
+					</div>
+				</section>
+			</div>
+		</div>
+	</section>
+
+	<div class="wrap-loading display-none" style="z-index: 10000">
+		    <div><button id="btn_ajax_cancel" type="button">
+		    	<font color="red" size="5"><span id="output1">0</span>초</font>
+		    	<br><span id="output2"></span>
+		    	<br><font color=blue>오전 9시~10시에는 사용자가 많아
+		    	<br>시간이 조금 더 걸릴 수 있습니다.</font>
+		    	<br>(취소는 로딩 바 클릭)
+		    	<img src="{% static 'custom/img/ajax-loader2.gif' %}" style="width: 80%" /></button></div>
+	</div>
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+	$(document).ready(function(e){
+		$('#jstree_dataview').jstree({
+			core: {'check_callback': true},
+			plugins : [
+						"unique",
+					  ]
+
+		});
+
+	    config_select = {
+	        lineNumbers:false,
+			mode:  "text/x-sql",
+			theme: "base16-light",
+			smartIndent: true,
+			lineWrapping: true,
+			readOnly: true,
+	    };
+
+	    editor_select = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_code"), config_select);
+
+	    editor_select.setSize("100%",130);
+
+	});
+</script>
+
+
+<script type="text/javascript">
+
+  let repeat;
+  let toggle_click = "N"
+	function elasedTime(theObject) {
+
+       var $output1 = $("#output1");
+       var $output2 = $("#output2");
+       var count = 0;
+       // 여기에 풀이를 입력해주세요.
+       // 함수 생성
+       function addCount() {
+           // 값 증가
+           count++;
+           // 값을 출력
+           $output1.text(count);
+
+           $output2.text($("#div_time").html());
+       }
+
+       addCount();
+
+       repeat = setInterval(addCount, 1000);
+	 }
+
+  // $(document).on('click', '.click_jstree_dataview', function () {
+
+
+	 //  	// $(this).jstree("refresh");
+
+
+
+
+
+
+
+  //  	})
+
+
+
+  $('#jstree_dataview').on("select_node.jstree", function (e, data) {
+
+    	// var data_id = data.node.id;
+
+
+    	var data_id = data.node.data.data_id;
+
+
+    	$("#div_error").html("")
+    	jQuery("#div_error").hide();
+    	jQuery("#btn_download").hide();
+
+
+    	if ( data.node.data.data_yn == "Y" )
+    	{
+
+	  	    $.ajax({
+	  		    type: "POST",
+	  		    url: "{% url 'ajaxDataviewClick' %}",
+	  		    data: { 'data_id':data_id,'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	  		    dataType: "json",
+	  			success	: function(data){
+	  					// btn_editSql
+	  					jQuery("#btn_editSql").hide();
+	  					jQuery("#btn_delSql").hide();
+
+	  					var url = "{% url 'DataListUpdateView' 123 %}".replace('123', data.ds_data_list[0].id);
+
+	  					$("#btn_editSql").attr("href", url);
+
+
+	  					// if ( {{request.user.id}} == data.ds_data_list[0].id_reg_user)
+	  					// {
+	  					// 	jQuery("#btn_editSql").show();
+	  					// 	jQuery("#btn_delSql").show();
+	  					// }
+
+
+	  					if ( {{request.user.id}} == 2 )
+  						{
+	  						jQuery("#btn_editSql").show();
+	  						jQuery("#btn_delSql").show();
+	  					}
+	  					for ( k in data.ds_psbl_users)
+	  					{
+	  						if ( {{request.user.id}} == data.ds_psbl_users[k] )
+	  						{
+		  						jQuery("#btn_editSql").show();
+		  						jQuery("#btn_delSql").show();
+		  					}
+	  					}
+	  					jQuery("#div_showSql").show();
+
+
+	  					$("#divDataResult").empty();
+
+	  					jQuery("#tr_input").hide();
+
+	  					$('#div_inputs').html("");
+
+
+
+
+  						var bind;
+  						var i = 1;
+  						for ( k in data.bind_value ) {
+  							jQuery("#tr_input").show();
+	  						bind = data.bind_value[k];
+	  						bind = bind.replace(":","");
+
+	  						if ( bind == "in_param" )
+	  						{
+	  							$('#div_inputs').append (
+		  							'<div class="col-sm-8" style="padding:1px"><input id="txt_input'+i+'" name="txt_inputs[]" bind_name="'+bind+'" type="text" class="form-control" placeholder="멀티컬럼(콤마로 구분)"><input id="txt_binds'+i+'" name="txt_binds[]" value="'+bind+'" type="hidden" class="form-control"></div>'
+				                );
+	  						}
+	  						else
+	  						{
+		  						$('#div_inputs').append (
+		  							'<div class="col-sm-3" style="padding:1px"><input id="txt_input'+i+'" name="txt_inputs[]" bind_name="'+bind+'" type="text" class="form-control" placeholder="'+bind+'"><input id="txt_binds'+i+'" name="txt_binds[]" value="'+bind+'" type="hidden" class="form-control"></div>'
+				                );
+		  					}
+		  					i = i + 1;
+		  				}
+
+
+
+
+
+
+	  					$("#div_data_title").html(data.ds_data_list[0].data_title);
+	  					$("#data_title").val(data.ds_data_list[0].data_title);
+	  					$("#div_data_explain").html(data.ds_data_list[0].data_explain);
+	  					$("#div_sql_id").val(data.ds_data_list[0].id);
+	  					$("#div_id_dblist").val(data.ds_data_list[0].id_dblist);
+
+	  					editor_select.setValue(data.ds_data_list[0].sql_text);
+
+	  					var prov_yn = data.ds_data_list[0].prov_yn
+
+	  					console.log(prov_yn)
+
+	  					if ( prov_yn != 'Y' )
+	  					{
+	  						$("#btn_dataResult").attr("disabled", true);
+
+	  						if (prov_yn == 'B')
+		  						// $("#div_btn_diable").html("승인 대기 상태입니다.")
+		  						$("#div_error").html("[안내] 승인 대기 상태입니다.")
+		  						jQuery('#div_error').show();
+	  						if (prov_yn == 'C')
+		  						// $("#div_btn_diable").html(data.ds_data_list[0].db_use + "는 권한이 있는 사용자만 실행 가능합니다.")
+		  						$("#div_error").html("[안내] 개인정보가 포함되어 있어 열람 권한을 신청한 직원만 조회 가능합니다.")
+		  						jQuery('#div_error').show();
+	  						if (prov_yn == 'D')
+		  						// $("#div_btn_diable").html(data.ds_data_list[0].db_use + "는 권한이 있는 사용자만 실행 가능합니다.")
+		  						$("#div_error").html("[안내] 데이터 요청 메뉴에서 조회 권한을 신청해주세요")
+		  						jQuery('#div_error').show();
+	  					}
+	  					else
+	  					{
+	  						$("#btn_dataResult").attr("disabled", false);
+	  						$("#div_btn_diable").html("")
+	  						jQuery('#div_error').hide();
+	  					}
+
+	  					var privacy_yn
+
+
+	  					if ( data.ds_data_list[0].privacy_yn == '1')
+	  						privacy_yn = "개인정보 여부 : <font color=red><b>존재</b></font>"
+	  					else
+	  						privacy_yn = "개인정보 여부 : 없음"
+
+	  					$("#div_privacy_yn").html(privacy_yn);
+
+	  					$("#div_time").html("평균 응답시간 : " + data.ds_data_list[0].t);
+
+	  					var db_use;
+
+	  					if ( data.ds_data_list[0].db_use != null)
+	  						db_use = "DB용도 : "+data.ds_data_list[0].db_use
+	  					else
+	  						db_use = ""
+
+	  					$("#div_db_use").html(db_use);
+	  					$("#div_db_type").html(data.ds_data_list[0].realoretl);
+	  					$("#div_execute_cnt").html(data.ds_data_list[0].execute_cnt);
+
+
+	  					$("#div_reg_name").html(data.ds_data_list[0].reg_n + ' ' + data.ds_data_list[0].reg_dtm);
+	  					$("#div_mod_name").html(data.ds_data_list[0].mod_n + ' ' + data.ds_data_list[0].mod_dtm);
+	  					$("#div_req_name").html(data.ds_data_list[0].req_user);
+	  					$("#div_edit_name").html(data.ds_data_list[0].edit_user);
+	  					$("#div_prov_yn1").html(data.ds_data_list[0].prov_yn1);
+	  					$("#div_prov_yn2").html(data.ds_data_list[0].prov_yn2);
+
+
+
+			       }
+			   ,error		: function(request,status,error) {alert("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);}
+			   ,beforeSend	: function() {}
+			   ,complete	: function() {}
+			});
+	  	}
+	  	else {
+		  	var team_name = data.node.id;
+			if ($("li[id=" + team_name + "]").hasClass("jstree-open"))
+		  		$(this).jstree("close_node", "#" + team_name);
+		  	else
+		  		$(this).jstree("open_node", "#" + team_name);
+  		    $.ajax({
+  					 url: "{% url 'ajaxDataview' %}"
+  			       , type		: "POST"
+  			       , dataType	: "json"
+  			       , async 		: false
+  			       , data: { team_name : team_name,
+  			                'csrfmiddlewaretoken': '{{ csrf_token }}'} // 서버로 데이터 전송시 옵션
+  			       , success	: function(data){
+  							    	   $.each(data.ds_data_list, function(i, obj) {
+  							    	   	   // alert(obj.COL_COMMENTS);
+  							    		   $('#jstree_dataview').jstree(
+  		    	   									'create_node'
+  		    	   								  , $('#'+team_name)
+  		    	   								  , {"id": obj.id+obj.username+obj.team_name, "text": obj.tree_title, data:{data_yn:"Y",data_id:obj.id}, "icon" : "{% static 'assets/images/jstree2.png' %}" }
+  		    	   								  , "last"
+  		    	   								  , false
+  		    	   								  , false
+  		    	   							);
+
+  								    })
+
+  			       }
+  				   , error		: function(request,status,error) {alert("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);}
+  				   , beforeSend	: function() {}
+  				   , complete	: function() {}
+  			});
+
+	  	}
+
+    });
+
+    $("#btn_showSql").click(function(){
+
+
+	    if($("#tr_showSql").css("display") == "none"){
+	        jQuery('#tr_showSql').show();
+	        $(this).html('<i class="fa fa-question-circle"></i> SQL 숨기기');
+	    } else {
+	        jQuery('#tr_showSql').hide();
+	        $(this).html('<i class="fa fa-question-circle"></i> SQL 보기');
+	    }
+    	editor_select.refresh()
+    })
+
+
+    $("#btn_download").click(function(){
+	  	var txt_inputs = $('input[name="txt_inputs[]"]').map(function(){
+	                    return this.value
+	                }).get();
+
+
+    	check = 0
+    	for ( v in txt_inputs )
+    	{
+    		if(txt_inputs[v] == "")
+    		{
+    			check = 1
+    		}
+    	}
+
+    	if ( check == 1)
+    	{
+
+    		$("#div_error").html("[안내] 모든 입력값을 입력해야 정상적인 데이터 확인이 가능합니다.")
+    		jQuery("#div_error").show();
+    		return false;
+    	}
+
+
+
+    	msg = $('#div_error').text()
+
+    	$("#div_error").html(msg+"<br><font color=blue>&nbsp;&nbsp;&nbsp;&nbsp;엑셀 다운로드 중입니다. 조금만 기다려주세요</font>")
+    	jQuery("#div_error").show();
+
+    });
+
+
+    $("#btn_dataResult").click(function(){
+    	// #################################################################
+    	// ## 실행 버튼 클릭 시
+    	// ## ajaxExecuteSQL
+    	// #################################################################
+
+	  	// SQL 결과 창으로 tab focus 이동
+
+	  	var txt_inputs = $('input[name="txt_inputs[]"]').map(function(){
+	  	                    return this.value
+	  	                }).get();
+
+	  	var txt_binds = $('input[name="txt_binds[]"]').map(function(){
+	  	                    return this.value
+	  	                }).get();
+
+	  	// var txt_binds = $('input[name="txt_binds[]"]').map(function(){
+	  	//                     return this.value;
+	  	//                 }).get();
+
+
+	  	var data_title = $("#data_title").val();
+
+
+
+    	sql_id = $("#div_sql_id").val();
+    	id_dblist = $("#div_id_dblist").val();
+
+    	check = 0
+    	for ( v in txt_inputs )
+    	{
+    		if(txt_inputs[v] == "")
+    		{
+    			check = 1
+    		}
+    	}
+
+    	if ( check == 1)
+    	{
+    		$("#div_error").html("[안내] 모든 입력값을 입력해야 정상적인 데이터 확인이 가능합니다.")
+    		jQuery("#div_error").show();
+    		return;
+    	}
+
+    	var $output = $("#output");
+    	$output.text(0);
+
+    	elasedTime();
+
+  	    xhr = $.ajax({
+  	      type: "POST",
+  	      url: "{% url 'ajaxDataviewExecuteSQL' %}",
+  	      data: { 'sql_id':sql_id,
+  	      		  'id_dblist':id_dblist,
+  	      		  'txt_inputs':txt_inputs,
+  	      		  'txt_binds':txt_binds,
+  	      		  'data_title':data_title,
+  	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+  	      dataType: "json",
+  	      "success": function(data) {
+  	                    var tableHeaders='';
+  	                    $.each(data.ds_columns, function(i, val){
+  	                        tableHeaders += "<th>" + val + "</th>";
+
+  	                    });
+
+
+  	                    // var option='data-plugin-options=\'{"searchPlaceholder": "결과 내 검색"}\''
+
+  	                    $("#divDataResult").empty();
+
+  	                    if (toggle_click=="N"){  	                    	
+	  	                    document.querySelector('.sidebar-toggle').click();
+	  	                    toggle_click = "Y";
+  	                    };
+  	                    
+  	                    
+
+
+  	                    $("#divDataResult").append('<table  style="width:100%;" id="datatable-default" class="table table-bordered table-striped mb-none csort" ><thead><tr>' + tableHeaders + '</tr></thead></table>');
+
+
+  	                    if ( data.excel_down_expyn == "Y") {
+	  	                    var table = $('#datatable-default').DataTable({
+	  				            responsive: true,
+	  				            "scrollX": true,
+	  							"scrollCollapse": true,
+	  				            "pageLength": 10,
+	  				            "order": [],
+	  				            "bFilter": true,
+	  				            "paging": true,
+	  				            // "scrollX": true,
+	  				            // "scrollY": "200px",
+	  				            data: data['ds_result']
+
+	  				        });
+	  				    }
+	  				    else
+	  				    {
+	  	                    var table = $('#datatable-default').DataTable({
+	  				            responsive: true,
+	  				            "scrollX": true,
+	  							"scrollCollapse": true,
+	  				            "pageLength": 100,
+	  				            "order": [],
+	  				            "bFilter": true,
+	  				            "paging": true,
+	  				            // dom: '<lBfrtip>',
+	  				            dom: '<Bfrtip>',
+	  				            buttons: [
+	  				                {
+		                                extend: 'excelHtml5',
+		                                filename: data.data_title,
+		                                title: ''
+		                            },
+	  				            ],
+	  				            // "scrollX": true,
+	  				            // "scrollY": "200px",
+	  				            data: data['ds_result']
+
+	  				        });
+	  				    }
+
+  				        table.buttons().container()
+  				                .appendTo( '#example_wrapper .col-md-6:eq(0)' );
+
+  				        // $("#divDataResult").columns.adjust().draw();
+  				        clearInterval(repeat);
+
+
+
+  				        if ( data.error_yn == "Y" )
+  				        {
+	  				        $("#div_error").html(data.error_message)
+
+	  				        if ( data.excel_down_expyn == "Y")
+	  				        {
+	  				        	jQuery("#btn_download").show();
+	  				        }
+  				        }
+  				        else
+  				        {
+	  				        $("#div_error").html("[안내] 데이터 조회가 완료되었습니다 ( "+data.ds_result_leng+"건 )")
+	  				    }
+  				        jQuery("#div_error").show();
+  	                },
+  	        beforeSend:function(){
+  				        $('.wrap-loading').removeClass('display-none');
+  				    },
+  		    complete:function(){
+
+  		        $('.wrap-loading').addClass('display-none');
+  		    },
+  	      error: function(request, status, error){
+  	      	$("#div_error").html("[안내] 오류가 발생되었습니다. 관리자에 문의해주세요.")
+  	      	jQuery("#div_error").show();
+  	      	clearInterval(repeat);
+
+
+  	      },
+  	    });
+    })
+
+
+    $("#btn_ajax_cancel").click(function(){
+	  	xhr.abort();
+	  	$("#div_error").html('[안내] SQL 실행 취소됨');
+	  	jQuery("#div_error").show();
+	  	// alert(xhr);
+  })
+
+  // enter 키 사용 금지
+  $('#data_view').bind('keydown', function(e) {
+	    if (e.keyCode == 13) {
+	        e.preventDefault();
+	    }
+  });
+
+    // $("#jstree_dataview").bind("click_jstree_dataview", function (e, data) {
+    //   var id = $(this).attr("id");
+
+    //   console.log("###")
+    //   console.log(id)
+    //   console.log("###")
+
+    // });
+</script>
+
+
+
+{%endblock%}
+
+
+
+
+
+

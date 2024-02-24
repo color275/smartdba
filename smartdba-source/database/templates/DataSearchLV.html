@@ -1,0 +1,496 @@
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+
+
+	<link rel="stylesheet" href="{% static 'assets/vendor/bootstrap-multiselect/bootstrap-multiselect.css' %}" />
+	<link rel="stylesheet" href="{% static 'custom/css/jquery-ui.css' %}">
+
+
+	<style type="text/css">
+		th, td { white-space: nowrap; }
+		.nopadding {
+		   padding: 0 !important;
+		   margin: 0!important;
+		}
+		.bold-text {
+		    font-weight: bold;
+		    color: red;
+		}
+		.ui-menu-item .ui-menu-item-wrapper.ui-state-active {
+		    background: #6693bc !important;
+		    font-weight: bold !important;
+		    color: #ffffff !important;
+		}
+		#datatable-default_filter {
+			width:30%;
+			position:relative;
+		    float: right;
+		}
+	</style>
+
+</head>
+
+<header class="page-header">
+	<table style="width: 100%" border=0>
+		<tr>
+			<td>
+				<h2>우리 회사에는 어떤 데이터가 있을까요?
+				</h2>
+			</td>
+
+			<td style="text-align: right;">
+<!-- 				<a href="#" onclick="click_question();">
+					<img src="{% static 'custom/img/question.png' %}" style="width: 7%">
+				</a> -->
+				&nbsp;&nbsp;&nbsp;
+			</td>
+		</tr>
+	</table>
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  id="data_search_keyword">
+
+	{% csrf_token %}
+
+	<br>
+
+	<section class="panel">
+
+		<div class="overlay"></div>
+
+		<header class="panel-heading" style="padding-bottom: 3px">
+
+					<div class="form-group">
+						<div class="input-group">
+							<div class="ui-widget">
+							{{form.data_title}}
+							</div>
+							<span class="input-group-btn">
+								<button type="submit" class="btn btn-lg btn-primary" id="search_button" >Search</button>
+							</span>
+						</div>
+					</div>
+
+				    <div class="pull-right">
+				    	<div class="form-inline">
+					        {{form.db_type}}
+					        {{form.my_data}}
+					    </div>
+				    </div>
+
+
+		<div class="form-group">
+			<div class="pull-left">
+
+				{% if word_meaning %}
+					<table style="margin: 0px, 0px, 0px; padding: 0px, 0px" border=0>
+						<tr>
+							<td style="width: 5px">
+							</td>
+							<td>
+								<blockquote class="b-thin primary" style="margin: 0px; padding: 0px 10px">
+									<b><i><span class="highlight">{%if word_meaning.EXP_ORDER == 1%}용어 설명{% else %}비슷한 용어 설명{%endif%}</span>&nbsp; {{word_meaning.WORD_NAME}} ({%if word_meaning.WORD_NAME_READ %}{{word_meaning.WORD_NAME_READ}} / {% endif %}{{word_meaning.WORD_ENGLISH_NAME}})</i></b><br>
+									{{word_meaning.CONTENTS|safe}}
+								</blockquote>
+							</td>
+						</tr>
+					</table>
+				{% elif keyword != "" %}
+					<br>
+					<!-- ============================================================================================ -->
+					<!-- 숨김 시작 -->
+					<!-- ============================================================================================ -->
+					<!-- <div style="display:none">
+						<button id="btn_word_add" class="modal-with-form mb-xs mt-xs mr-xs btn btn-sm btn-default" href="#btn_word_add_modal"><i class="fa fa-comment"></i> 용어 등록 요청</button>
+						<div id="btn_word_add_modal" class="modal-block modal-block-primary mfp-hide">
+							<section class="panel">
+								<header class="panel-heading">
+									<h2 class="panel-title">궁금한 용어를 요청해주세요</h2>
+								</header>
+								<div class="panel-body">
+
+										<div class="form-group mt-lg">
+											<label class="col-sm-3 control-label">용어명<span class="required">(*)</span></label>
+											<div class="col-sm-9">
+												<input type="text" id="txt_word_add_name" name="txt_word_add_name" class="form-control" placeholder="Type your name..." value="{{keyword}}" required />
+											</div>
+										</div>
+										<div class="form-group">
+											<label class="col-sm-3 control-label">요청 내용</label>
+											<div class="col-sm-9">
+												<textarea rows="5" class="form-control" id = "txt_word_add_explain" name = "txt_word_add_explain" placeholder="Type your comment..." ></textarea>
+											</div>
+										</div>
+
+								</div>
+								<footer class="panel-footer">
+									<div class="row">
+										<div class="col-md-12 text-right">
+											<button id="btn_word_add_ok" type="button" class="btn btn-primary">Submit</button>
+											<button id="btn_word_add_cancel" class="btn btn-default modal-dismiss">Cancel</button>
+										</div>
+									</div>
+								</footer>
+							</section>
+						</div>
+					</div> -->
+					<!-- ============================================================================================ -->
+					<!-- 숨김 종료 -->
+					<!-- ============================================================================================ -->
+				{% endif %}
+				<br>
+			</div>
+		</div>
+
+		</header>
+	
+
+
+
+		{%if objects %}
+			<div class="panel-body" style="width:100%">
+				<table class="table table-bordered table-striped mb-none" id="datatable-default" style="width: 100%">
+					<thead>
+						<tr>
+							<th style="text-align: center;">#</th>
+							{% for data in header_data %}
+								<th style="text-align: center;">{{data}}</th>
+							{% endfor %}
+
+						</tr>
+					</thead>
+					<tbody>
+					{% for data in objects %}
+						<tr >
+						    <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+							<td>{{data.id_dblist.db_use}} </td>
+							<td>{{data.id_domain}}</td>
+							<td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;" data-toggle="tooltip" data-placement="top" title="{{data.data_title}}">
+								<a href="{% url 'DataSearchDV' data.id %}">{{data.data_title}}</a>
+							</td>
+							<td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis;">{{data.data_explain|default_if_none:"--"|safe}}</td>
+							<td style="text-align: center;">{{data.get_privacy_yn_display}}</td>
+							<td>{{data.id_reg_user}}</td>
+							<td>{{data.reg_dtm|date:'Y/m/d'}}</td>
+
+						</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+			</div>
+
+
+		{% endif %}
+
+		{{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+		<div class="pull-right">
+			{% if is_paginated %}
+			  <nav>
+			    <ul class="pagination">
+			      {% if page_obj.has_previous %}
+			        <li>
+			          <a href="?page={{ page_obj.previous_page_number }}">
+			            <span>Prev</span>
+			          </a>
+			        </li>
+			      {% else %}
+			        <li class="disabled">
+			          <a href="#">
+			            <span>Previous</span>
+			          </a>
+			        </li>
+			      {% endif %}
+
+			      {% for page in page_range %}
+			        <li {% if page == page_obj.number %}class="active"{% endif %}>
+			          <a href="?page={{ page }}">{{ page }}</a>
+			        </li>
+			      {% endfor %}
+
+			      {% if page_obj.has_next %}
+			        <li>
+			          <a href="?page={{ page_obj.next_page_number }}">
+			            <span>Next</span>
+			          </a>
+			        </li>
+			      {% else %}
+			        <li {% if not page_obj.has_next %}class="disabled"{% endif %}>
+			          <a href="#">
+			            <span>Next</span>
+			          </a>
+			        </li>
+			      {% endif %}
+			    </ul>
+			  </nav>
+			{% endif %}
+		</div>
+
+	</section>
+
+
+
+
+	<!--
+	<CENTER>
+	<div class="col-lg-12">
+
+
+
+
+		<div class="col-lg-3 div_request">
+		  <section class="panel">
+		    <div class="panel-body">
+		      <b><p class="text-muted">:: 인기있는 검색어 ::</p></b>
+		      <br>
+		      <div class="table-responsive">
+		        <table class="table table-striped mb-none">
+		          <thead>
+		            <tr>
+		              <th style="text-align: center;">#</th>
+		              <th>검색어</th>
+		            </tr>
+		          </thead>
+		          <tbody>
+		            {% for data in dataset_user_search_keyword %}
+		              <tr>
+		                <td style="text-align: center">{{data.ROWNUM}}</td>
+		                <td data-toggle="tooltip" data-placement="left" title="{{data.EXP_NAME}}">
+		                <a href="{% url 'DataSearchLV' data.DATA_TITLE %}">{{data.EXP_NAME|truncatechars:25}}</a>
+		                </td>
+		              </tr>
+		            {% endfor %}
+		          </tbody>
+		        </table>
+		      </div>
+		    </div>
+		  </section>
+		</div>
+
+		<div class="col-lg-4 div_request">
+		  <section class="panel">
+		    <div class="panel-body">
+		      <b><p class="text-muted">:: 나의 데이터 :: </p></b>
+		      <br>
+		      <div class="table-responsive">
+		        <table class="table table-striped mb-none">
+		          <thead>
+		            <tr>
+		              <th>#</th>
+		              <th>요청내용</th>
+		              <th>등록일자</th>
+		            </tr>
+		          </thead>
+		          <tbody>
+		            {% for data in dataset_my_datalist %}
+		              <tr>
+		                <td>{{data.ROWNUM}}</td>
+		                <td data-toggle="tooltip" data-placement="left" title="{{data.EXP_NAME}}">
+		                <a href="{% url 'DataSearchLV' data.DATA_TITLE %}">{{data.EXP_NAME|truncatechars:25}}</a>
+		                </td>
+		                <td>{{data.REG_DTM|date:"m.d"}}</td>
+		              </tr>
+		            {% endfor %}
+		          </tbody>
+		        </table>
+		      </div>
+		    </div>
+		  </section>
+		</div>
+
+		<div class="col-lg-5 div_request">
+		    <div class="panel-body">
+		    	<b><p class="text-muted">:: 최근 등록된 데이터 ::</p></b>
+		    	<br>
+		      <div class="table-responsive">
+		        <table class="table table-striped mb-none">
+		          <thead>
+		            <tr>
+		              <th>#</th>
+		              <th>요청내용</th>
+		              <th>등록자</th>
+		              <th>등록일자</th>
+		            </tr>
+		          </thead>
+		          <tbody>
+		            {% for data in dataset_latest_datalist %}
+		              <tr>
+		                <td>{{ forloop.counter }}</td>
+		                <td data-toggle="tooltip" data-placement="left" title="{{data.EXP_NAME}}">
+		                  <a href="{% url 'DataSearchLV' data.DATA_TITLE %}">{{data.EXP_NAME|truncatechars:30}}</a>
+		                </td>
+		                <td>{{data.USERNAME}}</td>
+		                <td>{{data.REG_DTM|date:"m.d"}}</td>
+		              </tr>
+		            {% endfor %}
+		          </tbody>
+		        </table>
+		      </div>
+		    </div>
+		  </section>
+		</div>
+	</div> -->
+
+
+
+
+	<input type="hidden" id="hidden_keyword" name="hidden_keyword" value="{{keyword}}">
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'custom/js/jquery-ui.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	$(document).ready(function(e) {
+
+
+
+		var table = $('#datatable-default').DataTable({
+			        responsive: true,
+					"scrollCollapse": true,
+			        "pageLength": 10,
+			        "order": [],
+			        "bFilter": true,
+			        dom: 'Brt',
+			        buttons: [],
+			        "scrollX": true,
+			        "scrollY": 500,
+			        "columnDefs": [ {
+			                   "searchable": false,
+			                   "orderable": false,
+			                   "targets": 0
+			               } ],
+
+			    });
+
+
+	});
+
+	$("#btn_word_add_ok").click(function() {
+		word_add_name = document.getElementById("txt_word_add_name").value;
+
+	  	if((word_add_name == "")||(word_add_name==null))
+	  	{
+	  		alert("용어명을 입력해주세요");
+	  	}
+	  	else {
+	  		word_add_explain = document.getElementById("txt_word_add_explain").value;
+
+  		    $.ajax({
+  		      type: "POST",
+  		      url: "{% url 'ajaxUserRequestWord' %}",
+  		      data: { 'word_add_name':word_add_name,
+  		              'word_add_explain':word_add_explain,
+  		              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+  		      dataType: "json",
+  		      "success": function(json) {
+
+  		                    console.log(json['success']);
+
+  		                },
+  		        beforeSend:function(){
+  					        $('.wrap-help').removeClass('display-none');
+  					    },
+  			    complete:function(){
+  			        $('.wrap-help').addClass('display-none');
+  			    },
+
+  		      error: function(request, status, error){
+  		      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+  		      },
+		    });
+
+
+	  	$("#btn_word_add_cancel").click();
+	  	}
+
+	});
+
+	$("#btn_data_add_ok").click(function() {
+		data_add_name = document.getElementById("txt_data_add_name").value;
+
+	  	if((data_add_name == "")||(data_add_name==null))
+	  	{
+	  		alert("데이터명을 입력해주세요");
+	  	}
+	  	else {
+	  		data_add_explain = document.getElementById("txt_data_add_explain").value;
+
+  		    $.ajax({
+  		      type: "POST",
+  		      url: "{% url 'ajaxUserRequestData' %}",
+  		      data: { 'data_add_name':data_add_name,
+  		              'data_add_explain':data_add_explain,
+  		              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+  		      dataType: "json",
+  		      "success": function(json) {
+
+  		                    console.log(json['success']);
+
+  		                },
+  		        beforeSend:function(){
+  					        $('.wrap-help').removeClass('display-none');
+  					    },
+  			    complete:function(){
+  			        $('.wrap-help').addClass('display-none');
+  			    },
+
+  		      error: function(request, status, error){
+  		      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+  		      },
+		    });
+
+
+	  	$("#btn_data_add_cancel").click();
+	  	}
+
+	});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{%endblock%}

@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+<head>
+
+	<style type="text/css">
+		h5 {
+		    display: inline;
+		}
+
+	</style>
+
+</head>
+
+
+
+{%block content %}
+
+<!-- {{dataset_dict.PRD_ATTR_PRD_M.0}} -->
+<!-- {% for lastname, firstname in dataset_dict.items %}
+  <h1> {{ lastname }} </h1>
+  <p> {{ firstname|join:", " }} </p>
+{% endfor %} -->
+
+<section class="panel">
+		<header class="page-header">
+			<h2>DATA 확인 > 03.상품</h2>
+
+			<div class="right-wrapper pull-right">
+				<ol class="breadcrumbs">
+					<li>
+						<a href="index.html">
+							<i class="fa fa-home"></i>
+						</a>
+					</li>
+					<li><span>UI Elements</span></li>
+					<li><span>Tree View</span></li>
+				</ol>
+
+				<a class="sidebar-right-toggle" data-open="sidebar-right"><i class="fa fa-chevron-left"></i></a>
+			</div>
+		</header>
+
+
+		<div class="row">
+			<div class="col-md-3">
+				<section class="panel">
+					<header class="panel-heading">
+						<!-- <div class="panel-actions">
+							<a href="#" class="fa fa-caret-down"></a>
+							<a href="#" class="fa fa-times"></a>
+						</div> -->
+
+						<h2 class="panel-title">상품</h2>
+						<p class="panel-subtitle">필요한 데이터를 선택하세요</p>
+
+					</header>
+					<div class="panel-body">
+						<div id="treeBasic">
+							<ul>
+								<li data-jstree='{ "opened" : true }' class="folder">
+									 상품
+									<ul>
+										<!-- <li data-jstree='{ "selected" : true }'>
+											<a href="http://www.google.ca" class="jstree-clicked">Selected Node</a>
+										</li> -->
+										{% for tab_comments, col_comments in dataset_dict.items %}
+											{% if tab_comments == tab_nm %}
+												<li data-jstree='{ "opened" : true }' class="colored-icon">
+											{% else %}
+												<li data-jstree='{ "opened" : false }' class="colored-icon">
+											{% endif %}
+												 {{tab_comments}}
+										      <ul>
+										  {% for comments in col_comments %}
+										  		<!-- <li data-jstree='{ "type" : "file" }' onclick="helloWorld('{{comments.0}}')"> -->
+										  		{% if tab_comments == tab_nm and comments.0 == col_nm %}
+										  			<li data-jstree='{ "type" : "file", "selected" : true }' onclick="location.href='{% url 'dataSearchPrd' comments.1 %}'">
+										  		{% else %}
+										  			<li data-jstree='{ "type" : "file" }' onclick="location.href='{% url 'dataSearchPrd' comments.1 %}'">
+										  		{% endif %}
+										  			{{comments.0}}
+										  		</li>
+										  {% endfor %}
+										      </ul>
+										    </li>
+										{% endfor %}
+
+										<!-- <li data-jstree='{ "opened" : false }'>
+											 Opened Node
+											<ul>
+												<li data-jstree='{ "disabled" : true }'>
+													 Disabled Node
+												</li>
+												<li data-jstree='{ "type" : "file" }'>
+													 Child Node
+											</ul>
+										</li> -->
+										<!-- <li data-jstree='{ "icon" : "fa fa-picture-o" }'>
+											 Custom Icon
+										</li>
+										<li data-jstree='{ "icon" : "assets/images/icon.png" }'>
+											 Custom Icon Image
+										</li> -->
+									</ul>
+
+								</li>
+							</ul>
+						</div>
+					</div>
+				</section>
+			</div>
+
+			{% if column_dataset %}
+				<div class="col-md-8">
+					<section role="main" class="panel">
+
+
+						<!-- start: page -->
+
+						<section class="panel">
+							<div class="panel-body">
+								<div class="invoice">
+									<header class="clearfix">
+										<div class="row">
+											<div class="col-md-8 mt-md">
+												<h2 class="h2 mt-none mb-sm text-dark text-bold">{{column_dataset.col_comments}}</h2>
+												<h4 class="h4 m-none text-dark text-bold">{{column_dataset.domain_name}} <i class="fa  fa-chevron-right" aria-hidden="true"></i> {{column_dataset.comments}} </h4>
+											</div>
+											<div class="col-md-4 text-left mt-md mb-md">
+												<address class="ib mr-xlg">
+													<i class="fa fa-spinner" aria-hidden="true"></i> {{column_dataset.it_manager_name}}({{column_dataset.it_manager_team}})
+													<br/>
+													<i class="fa fa-spinner" aria-hidden="true"></i> Phone: 010-7572-2752
+													<br/>
+													<i class="fa fa-spinner" aria-hidden="true"></i> Email: lee.ch@gsshop.com
+												</address>
+												<!-- <div class="ib">
+													<img src="assets/images/invoice-logo.png" alt="OKLER Themes" />
+												</div> -->
+											</div>
+										</div>
+									</header>
+									<div class="bill-info">
+										<div class="row">
+											<div class="col-md-9">
+												<div class="bill-to">
+													<p class="h5 mb-xs text-dark text-semibold"><i class="fa   fa-check-square-o" aria-hidden="true"></i> 데이터 설명: </p>
+													<address>
+														{{column_dataset.col_comments}} 속성에 대한 설명입니다.
+													</address>
+												</div>
+
+											</div>
+											<div class="col-md-3">
+												<!-- <div class="bill-data text-left">
+													<p class="mb-none">
+														<span class="text-dark"><i class="fa fa-spinner" aria-hidden="true"></i> 데이터베이스:</span>
+														<span class="value">{{column_dataset.db_use}}</span>
+													</p>
+													<p class="mb-none">
+														<span class="text-dark"><i class="fa fa-spinner" aria-hidden="true"></i> 테이블명:</span>
+														<span class="value">{{column_dataset.table_name}}</span>
+													</p>
+													<p class="mb-none">
+														<span class="text-dark"><i class="fa fa-spinner" aria-hidden="true"></i> 속성명:</span>
+														<span class="value">{{column_dataset.column_name}}</span>
+													</p>
+												</div> -->
+											</div>
+										</div>
+									</div>
+
+									<div class="table-responsive">
+										<p class="h5 mb-xs text-dark text-semibold"><i class="fa   fa-check-square-o" aria-hidden="true"></i> 데이터 상세</p>
+											<div class="table-responsive">
+												<table class="table table-bordered mb-none">
+													<thead>
+														<tr >
+															<th style="width: 20%"><div class="fa-hover col-md-10">항목</div></th>
+															<th><div class="fa-hover col-md-10">내용</div></th>
+														</tr>
+													</thead>
+													<tbody>
+														<tr>
+															<td><div class="fa-hover col-md-10">데이터 위치</div></td>
+															<td>
+															<div class="fa-hover col-md-10">{{column_dataset.db_use}}</div><div class="fa-hover col-md-2"> <h7><i class="fa fa-external-link"></i></h7> 접속방법</div>
+</td>
+
+														</tr>
+														<tr>
+															<td><div class="fa-hover col-md-10">테이블명</div></td>
+															<td><div class="fa-hover col-md-10">{{column_dataset.table_name}}</div></td>
+
+														</tr>
+														<tr>
+															<td><div class="fa-hover col-md-10">속성명</div></td>
+															<td><div class="fa-hover col-md-10">{{column_dataset.column_name}}</div></td>
+														</tr>
+														<tr>
+															<td><div class="fa-hover col-md-10">속성유형</div></td>
+															<td><div class="fa-hover col-md-10">{{column_dataset.column_type_value}}</div></td>
+
+														</tr>
+														{%if column_dataset.column_type != "0" %}
+														<tr>
+															<td><div class="fa-hover col-md-10">코드매핑값</div></td>
+															<td><div class="fa-hover col-md-10">{{column_dataset.code_key2}}</div></td>
+														</tr>
+														{% endif %}
+													</tbody>
+												</table>
+											</div>
+									</div>
+
+									<br>
+
+									<div class="table-responsive">
+										<p class="h5 mb-xs text-dark text-semibold"><i class="fa fa-check-square-o" aria-hidden="true"></i> 조회 SQL</p>
+										<pre><code class="sql">{{column_dataset.sql_text}}</code></pre>
+									</div>
+
+									<!-- <div class="invoice-summary">
+										<div class="row">
+											<div class="col-sm-4 col-sm-offset-8">
+												<table class="table h5 text-dark">
+													<tbody>
+														<tr class="b-top-none">
+															<td colspan="2">Subtotal</td>
+															<td class="text-left">$73.00</td>
+														</tr>
+														<tr>
+															<td colspan="2">Shipping</td>
+															<td class="text-left">$0.00</td>
+														</tr>
+														<tr class="h4">
+															<td colspan="2">Grand Total</td>
+															<td class="text-left">$73.00</td>
+														</tr>
+													</tbody>
+												</table>
+											</div>
+										</div>
+									</div> -->
+								</div>
+
+								<!-- <div class="text-right mr-lg">
+									<a href="#" class="btn btn-default">Submit Invoice</a>
+									<a href="pages-invoice-print.html" target="_blank" class="btn btn-primary ml-sm"><i class="fa fa-print"></i> Print</a>
+								</div> -->
+							</div>
+						</section>
+					{% endif %}
+
+						<!-- end: page -->
+					</section>
+				</div>
+		</div>
+</section>
+
+<!-- <script type="text/javascript">
+
+	function helloWorld(param) {
+		$.get( "/database/dataSearch/?param="+param, function( data ) {
+		  $( "#detail" ).html( data );
+		});
+
+		// $('#detail').html('<h1>'+param+'</h2>')
+	}
+</script> -->
+
+
+
+
+
+
+
+{%endblock%}
+
+
+

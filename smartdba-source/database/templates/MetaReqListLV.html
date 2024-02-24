@@ -1,0 +1,1136 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load database_extras %}
+
+{% block extra_head_content  %}
+{% endblock %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+    	.td_fix_center {
+        	white-space: nowrap;
+        	text-align: center;
+        	vertical-align: middle;        	
+        }
+        th { white-space: nowrap; }
+
+        select {
+        			width: 50px; /* 원하는 너비설정 */
+        			height:22px;
+        			padding: .1em .1em;
+        		}
+        input {
+        			line-height: 25px;
+        		}
+
+        /*#datatable-default td, #datatable-default th {
+            padding: 1rem;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6;
+        }*/
+
+        #datatable-default th {
+        	background: #F9F9F9;
+        	text-align: center;
+        }
+
+
+        #datatable-default_filter {
+			width:100%;
+			position:relative;
+		    float: right;
+		}
+
+        .datatable-priv th {
+        	background: #F9F9F9;
+        	color: #606060;
+            vertical-align: middle;
+            text-align: center;
+            /*padding: 1rem;*/
+            /*border-top: 1px solid #dee2e6;*/
+        }
+
+        .datatable-priv td {
+        	vertical-align: middle;
+            text-align: center;
+
+        }
+
+        .datatable-info th {
+        	background: #F9F9F9;
+        	color: #606060;
+            vertical-align: middle;
+            text-align: center;
+            /*padding: 1rem;*/
+            /*border-top: 1px solid #dee2e6;*/
+        }
+
+        .datatable-info td {
+            vertical-align: middle;
+            text-align: center;
+            /*padding: 1rem;*/
+            /*border-top: 1px solid #dee2e6;*/
+        }
+
+
+
+
+
+
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'custom/css/datatables.min.css' %}"></script>
+</head>
+
+<header class="page-header">
+	<h2>메타 관리</h2>
+	<div class="right-wrapper pull-right">
+      <ol class="breadcrumbs">
+        <li>
+          {% if user.is_superuser %}
+            <a href="http://{{ request.get_host }}/admin/database/metareq/{{meta.id}}/change/" target="blank">&nbsp;
+              <button type="button" class="btn btn-xs btn-success">Admin</button>
+            </a>
+          {% endif %}
+        </li>
+      </ol>&nbsp;&nbsp;&nbsp;&nbsp;
+    </div>
+
+</header>
+
+
+<!-- start: page -->
+<form method="POST" id="MyForm" action="#"  >
+
+
+	{% csrf_token %}
+
+
+
+
+
+			<div class="alert alert-info">
+				<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>				
+	            <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=38574932" target="blank"><font color=black># 테이블명명규칙</font></a> 
+	            <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=36150238" target="blank"><font color=black># Sequence명명규칙</font></a>
+	            <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=36145772" target="blank"><font color=black># SQLID작성</font></a>
+	            <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30119799" target="blank"><font color=black># 승인자</font></a> 
+	            <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30120662" target="blank"><font color=black># 권한</font></a>
+	            {% if user.is_superuser %} 
+	            <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=41899443" target="blank"><font color=red># CDC테이블 반영 스크립트</font></a>{%endif%}
+
+			</div>
+	<div class="pull-right">
+
+		<a type="button" href="{% url 'MetaReqLV' %}" class="btn btn-primary">목록으로</a>
+		{% if meta.dba_dev_yn == "0" %}
+			{% if request.user.is_superuser or meta.id_reg_user.id == request.user.id %}
+				<a type="button" href="{% url 'MetaReqListUV' id_metareq %}" class="btn btn-primary" onclick="if (!confirm('수정 시 승인이 모두 초기화 됩니다. 진행하시겠습니까?')) return false">수정</a>
+			{% else %}
+				<a type="button" disabled class="btn btn-primary" onclick="if (!confirm('수정 시 승인이 초기화 됩니다. 진행하시겠습니까?')) return false">수정</a>
+			{% endif %}
+		{% elif meta.dba_dev_yn == "2" %}
+			{% if request.user.is_superuser or meta.id_reg_user.id == request.user.id %}
+				<a type="button" href="{% url 'MetaReqListUV' id_metareq %}" class="btn btn-primary" onclick="if (!confirm('수정 시 승인이 모두 초기화 됩니다. 진행하시겠습니까?')) return false">수정</a>
+			{% else %}
+				<a type="button" disabled class="btn btn-primary" onclick="if (!confirm('수정 시 승인이 초기화 됩니다. 진행하시겠습니까?')) return false">수정</a>
+			{% endif %}
+		{% elif meta.dba_dev_yn == "1" %}
+			<a type="button" class="btn btn-primary" onclick="alert('수정 불가 : 개발 반영이 완료되면 수정이 불가합니다.');" >수정</a>
+		{% endif %}
+	</div>
+	<br><br>
+
+
+
+
+
+	<div class="panel-body">
+		<section class="panel panel-featured">
+			<header class="panel-heading">
+				<div class="panel-actions">
+					<a href="#" class="fa fa-caret-down"></a>
+					<!-- <a href="#" class="fa fa-times"></a> -->
+				</div>
+
+				<h2 class="panel-title">요청 정보</h2>
+			</header>
+
+			<div class="panel-body">
+				<div style="float: left; padding-right: 20px; width: 75%">
+					<table style="width: 100%" class="datatable-info datatable-info table table-bordered mb-none">
+						<tr>
+							<th>메타번호</th>
+							<td colspan=3>{{meta.id}}</td>
+							<th>행봇/CSR번호</th>
+							<td colspan=3>{{meta.csr}}</td>
+						<tr>
+							<th>배포희망일자</th>
+							<th>DB용도</th>
+							<th>도메인</th>
+							<th>오브젝트</th>
+							<th>신규/변경</th>
+							<th>수정일자</th>
+							<th>요청자</th>
+							<th>승인자</th>
+						</tr>
+						<tr>
+
+							<td><code>{{meta.dist_dtm | default_if_none:""}}</code></td>
+							<td>{{meta.id_dblist.db_use}}</td>
+							<td>{{meta.id_domainanddblist | default_if_none:"--"}}</td>
+							<td>{{meta.get_obj_class_display}}</td>
+							<td><code>{{meta.get_obj_new_display}}</code></td>
+							<td>{{meta.mod_dtm|date:"Y/m/d"}}</td>
+							<td data-toggle="tooltip" data-placement="top" title="{{meta.id_reg_user.username}} / {{req_user_tel}}">{{meta.id_reg_user}}</td>
+							<td data-toggle="tooltip" data-placement="top" title="{{meta.id_pl_prod.username}} / {{pl_prod_tel}}">{{meta.id_pl_prod}}</td>
+						</tr>
+					</table>
+					<table id="" class="datatable-info table table-bordered mb-none">
+						<tr>
+							<th>테이블명</th>
+							<th>한글명</th>
+							<th>CDC여부</th>
+							<th>개인정보 여부</th>
+
+							<th>보관주기</th>
+							<th>보관주기 컬럼</th>
+						</tr>
+						<tr>
+							<td>{% if meta.id_tablelist %}
+									{{meta.id_tablelist.owner}}.{{meta.id_tablelist.table_name}}
+								{% else %}
+									{{meta.table_name}}
+								{% endif %}
+							</td>
+							<td>{% if meta.id_tablelist %}
+									{{meta.id_tablelist.comments| default_if_none:"--"}}
+								{% else %}
+									{{meta.table_comments| default_if_none:"--"}}
+								{% endif %}
+							</td>
+							<td>{% if meta.id_tablelist.cdc_yn == "1" %}<code>{{meta.id_tablelist.get_cdc_yn_display}}</code>{% endif %}</td>
+							<td>{% if meta.id_tablelist.secu_yn == "1" %}개인정보{% endif %} <code>{{add_secu_yn}}</code></td>
+							<td>{{meta.storage_cycle | default_if_none:""}}</td>
+							<td>{{meta.storage_cycle_column | default_if_none:"--"}}</td>
+						</tr>
+					</table>
+					<table id="" class="datatable-info table table-bordered mb-none" style="width: 100%">
+						<tr>
+							<th style="width:10%">제목</th>
+							<td style="text-align: left" colspan="10">{{meta.title}}</td>
+						</tr>
+						<tr>
+							<th>요청내용</th>
+							<td style="text-align: left" colspan="10" ><b>{{meta.req_contents|linebreaksbr }}</b></td>
+						</tr>
+					</table>
+				</div>
+
+				<div id="div_hidden_ok" style="display: none"></div>
+
+
+				<div style="float: left; padding-right: 20px; width: 15%">
+					<table class="datatable-priv table table-bordered mb-none">
+						<tr>
+							<th rowspan=2 style="vertical-align: middle;">개발 반영<br>승인</th>
+							<!-- <th>담당PL 승인</th> -->
+							<!-- <th>DA 승인</th> -->
+							<th colspan="3">DBA 승인/반영</th>
+						</tr>
+						<tr>
+							<!-- <td style="vertical-align: middle;height: 70px">
+								<div id="div_pl_dev">
+									{% if meta.pl_dev_yn in "1 2" %}
+										<a href="#btn_message_modal" class="modal-with-form" onclick="set_message('개발환경 담당PL승인','{{meta.id_pl_dev}}','{{meta.get_pl_dev_yn_display}}', '{{meta.pl_dev_comment}}')" data-toggle="tooltip" data-placement="top" title="{{meta.id_pl_dev.first_name}} {{meta.pl_dev_dtm | date:'Y/m/d H:i'}}">{{meta.get_pl_dev_yn_display}}<br><font size=1>{{meta.pl_dev_dtm|date:'m/d H:i'}}<br>{{meta.id_pl_dev.first_name}}</font></a>
+									{% elif request.user == meta.id_pl_dev %}
+										<a href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('pl_dev')">승인</a><br>
+									{% elif request.user.last_name in "ITDevOps팀 MicroSVC팀" %}
+										<a href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('pl_dev')">위임승인</a><br>
+									{% else %}
+										승인대기<br>{{meta.id_pl_dev.first_name}}
+									{% endif %}
+								</div>
+							</td> -->
+							<!-- <td style="vertical-align: middle;height: 70px">
+								<div id="div_da_dev">
+									{% if meta.da_dev_yn in "1 2" %}
+										<a href="#btn_message_modal" class="modal-with-form" onclick="set_message('모델러 승인','{{meta.id_da_dev}}','{{meta.get_da_dev_yn_display}}', '{{meta.da_dev_comment}}')" data-toggle="tooltip" data-placement="top" title="{{meta.id_da_dev.first_name}} {{meta.da_dev_dtm | date:'Y/m/d H:i'}}">{{meta.get_da_dev_yn_display}}<br><font size=1>{{meta.da_dev_dtm|date:'m/d H:i'}}<br>{{meta.id_da_dev.first_name}}</font></a>
+
+									{% elif request.user.is_superuser %}
+										<a href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('da_dev')">승인</a>
+									{% endif %}
+								</div>
+							</td> -->
+							<td colspan="3" style="vertical-align: middle;height: 70px">
+								<div id="div_dba_dev">
+									{% if meta.dba_dev_yn in "1 2" %}
+										<a href="#btn_message_modal" class="modal-with-form" onclick="set_message('개발환경 DBA 승인','{{meta.id_dba_dev}}','{{meta.get_dba_dev_yn_display}}', '{{meta.dba_dev_comment}}')" data-toggle="tooltip" data-placement="top" title="{{meta.id_dba_dev.first_name}} {{meta.dba_dev_dtm | date:'Y/m/d H:i'}}">{{meta.get_dba_dev_yn_display}}<br><font size=1>{{meta.dba_dev_dtm|date:'m/d H:i'}}<br>{{meta.id_dba_dev.first_name}}</font></a>
+										{% if meta.req_prod_yn == "0" and request.user.is_superuser %}
+											<a id="btn_cancel" class="btn-xs btn btn-default" onclick="f_btn_cancel('dba_dev')">취소</a>
+										{% endif %}
+									{% elif request.user.is_superuser %}
+										<a id="btn_aceept" href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('dba_dev')">승인</a>
+									{% endif %}
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<th rowspan=2 style="vertical-align: middle;">운영 반영<br>승인</th>
+							<th>운영반영 요청</th>
+							<th>담당PL 승인</th>
+							<th colspan=2>DBA 승인/반영</th>
+						</tr>
+						<tr>
+							<td style="vertical-align: middle;height: 70px">
+								<div id="div_req_prod">
+									{% if meta.req_prod_yn in "1 2" %}
+										<a href="#btn_message_modal" class="modal-with-form" onclick="set_message('운영 반영 요청','{{meta.id_req_prod}}','{{meta.get_req_prod_yn_display}}', '{{meta.req_prod_comment}}')" data-toggle="tooltip" data-placement="top" title="{{meta.id_req_prod.first_name}} {{meta.req_prod_dtm | date:'Y/m/d H:i'}}"><font size=1>{{meta.req_prod_dtm|date:'m/d H:i'}}<br>{{meta.id_req_prod.first_name}}</font></a><br>
+
+										{% if meta.req_prod_yn == "1" and meta.id_reg_user == request.user  %}
+											{% if meta.pl_prod_yn == "2" or  meta.dba_prod_yn == "2" %}
+											<a href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('req_prod')">재요청</a>
+											{% endif %}
+										{% endif %}
+										{% if meta.pl_prod_yn == "0" and meta.id_reg_user == request.user %}
+											<a href="#btn_aceept_modal" class="modal-with-form btn-xs btn btn-default" onclick="set_oper('req_prod')">변경</a>
+										{% endif %}
+										{% if meta.pl_prod_yn == "0" and meta.id_reg_user == request.user %}
+											<a id="btn_cancel" class="btn-xs btn btn-default" onclick="f_btn_cancel('req_prod')">취소</a>
+										{% endif %}
+									{% elif meta.dba_dev_yn == "1" and meta.id_reg_user == request.user %}
+										<a href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('req_prod')">요청</a>
+									{% endif %}
+
+								</div>
+							</td>
+							<td style="vertical-align: middle;height: 70px">
+								<div id="div_pl_prod">
+									{% if meta.pl_prod_yn in "1 2" %}
+										<a href="#btn_message_modal" class="modal-with-form" onclick="set_message('운영환경 담당PL승인','{{meta.id_pl_prod}}','{{meta.get_pl_prod_yn_display}}', '{{meta.pl_prod_comment}}')" data-toggle="tooltip" data-placement="top" title="{{meta.id_pl_prod.first_name}} {{meta.pl_prod_dtm | date:'Y/m/d H:i'}}">{{meta.get_pl_prod_yn_display}}<br><font size=1>{{meta.pl_prod_dtm|date:'m/d H:i'}}<br>{{meta.id_pl_prod.first_name}}</font></a>
+										{% if meta.dba_prod_yn == "0" and request.user == meta.id_pl_prod %}
+											<a id="btn_cancel" class="btn-xs btn btn-default" onclick="f_btn_cancel('pl_prod')">취소</a>
+										{% endif %}
+									{% elif meta.req_prod_yn == "1" and request.user == meta.id_pl_prod %}
+										<a href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('pl_prod')">승인</a><br>
+									{% elif meta.req_prod_yn == "1" and request.user.last_name in "IT개발팀 MicroSVC팀 물류기획팀" %}
+										<a href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('pl_prod')">위임승인</a><br>
+									{% elif meta.req_prod_yn == "1" %}
+										승인대기<br>{{meta.id_pl_prod.first_name}}
+									{% endif %}
+								</div>
+							</td>
+							<td style="vertical-align: middle;height: 70px">
+								<div id="div_dba_prod">
+									{% if meta.dba_prod_yn in "1 2"  %}
+										<a href="#btn_message_modal" class="modal-with-form" onclick="set_message('운영환경 DBA 승인','{{meta.id_dba_prod}}','{{meta.get_dba_prod_yn_display}}', '{{meta.dba_prod_comment}}')" data-toggle="tooltip" data-placement="top" title="{{meta.id_dba_prod.first_name}} {{meta.dba_prod_dtm | date:'Y/m/d H:i'}}">{{meta.get_dba_prod_yn_display}}<br><font size=1>{{meta.dba_prod_dtm|date:'m/d H:i'}}<br>{{meta.id_dba_prod.first_name}}</font></a>
+										{% if request.user.is_superuser %}
+											<a id="btn_cancel" class="btn-xs btn btn-default" onclick="f_btn_cancel('dba_prod')">취소</a>
+										{% endif %}
+									{% elif meta.pl_prod_yn == "1" and request.user.is_superuser %}
+										<a href="#btn_aceept_modal" class="modal-with-form btn-sm btn btn-default" onclick="set_oper('dba_prod')">승인</a>
+									{% endif %}
+								</div>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</section>
+		<div id="btn_message_modal" class="modal-block modal-block-primary mfp-hide">
+			<section class="panel">
+				<header class="panel-heading">
+					<h2 class="panel-title"><div id="div_ok_title"></div></h2>
+				</header>
+				<div class="panel-body">
+					<div class="modal-wrapper">
+						<div class="modal-icon">
+							<i class="fa fa-question-circle"></i>
+						</div>
+						<div class="modal-text">
+							<h4></h4>
+							<div id="div_ok_message"></div>
+						</div>
+					</div>
+				</div>
+				<footer class="panel-footer">
+					<div class="row">
+						<div class="col-md-12 text-right">
+							<button class="btn btn-default modal-dismiss">닫기</button>
+						</div>
+					</div>
+				</footer>
+			</section>
+		</div>
+
+		<div id="btn_aceept_modal" class="modal-block modal-block-primary mfp-hide">
+			<section class="panel">
+				<header class="panel-heading">
+					<h2 class="panel-title">승인(요청)합니까?</h2>
+				</header>
+						
+				<div class="panel-body">
+					<!-- <form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate"> -->
+
+						<div class="form-group mt-lg">
+						<div class="form-group">
+						<label id="not_prov_msg" class="control-label" style="display: none" >&nbsp;&nbsp;&nbsp;&nbsp;<font color="red"><b>[주의] 운영 미반영 건 순서대로 운영 반영 요청되어야 합니다. 권한 신청의 경우 튜닝 번호를 같이 입력해주세요</label></b></font>						
+						</div>
+
+						<div class="form-group">
+							<label id="label_dist_dtm" class="col-sm-3 control-label" style="display: none">운영DB반영<br>희망일자</label>
+							<div id="div_dist_dtm"  class="col-sm-9" style="display: none">
+								{{form.dist_dtm}}
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-3 control-label">Comment 또는<br>반려사유</label>
+							<div class="col-sm-9">
+								<textarea rows="5" class="form-control" id = "txt_aceept" name = "txt_aceept" placeholder="승인합니다 / 요청합니다" ></textarea>
+								<font color="red"><div id="modal_msg"></div></font>
+							</div>
+						</div>
+						<br>
+					<!-- </form> -->
+				</div>
+				<footer class="panel-footer">
+					<div class="row">
+						<div class="col-md-12 text-right">
+							<button id="btn_aceept_ok" type="button" class="btn btn-primary">승인(요청)</button>
+							<button id="btn_aceept_reject" type="button" class="btn btn-danger">반려</button>
+							<button id="btn_aceept_no" class="btn btn-default modal-dismiss">취소</button>
+						</div>
+					</div>
+				</footer>
+			</section>
+		</div>
+	</div>
+	{% if meta.id_dba_dev %}
+		<div class="panel-body">
+			<section class="panel panel-featured">
+				<header class="panel-heading">
+					<div class="panel-actions">
+						<a href="#" class="fa fa-caret-down"></a>
+						<!-- <a href="#" class="fa fa-times"></a> -->
+					</div>
+					<h2 class="panel-title">승인 정보 / 기타 의견</h2>
+				</header>
+
+				<div class="panel-body">
+
+					{% if meta.id_dba_dev %}
+						<table class="datatable-priv table table-bordered mb-none">
+							{% if meta.dba_dev_comment %}
+							<tr>
+								<th style="width: 7%; text-align: left;">
+									{% if meta.dba_dev_yn == "1" %}
+										개발DB 반영
+									{% elif meta.dba_dev_yn == "2" %}
+										<font color="red">개발DB 반려</font>
+									{% endif %}
+
+								</th>
+								<th style="width: 5%">
+									{{meta.id_dba_dev}}
+								</th>
+								<td style="text-align: left;">
+									<i><font color="blue"><b>{{meta.dba_dev_comment}}</b></font></i>
+								</td>
+							</tr>
+							{% endif %}
+							{% if meta.req_prod_comment %}
+							<tr>
+								<th style="text-align: left;">
+									운영반영 요청
+								</th>
+								<th style="text-align: left;">
+									{{meta.id_req_prod|default_if_none:"--"}}
+								</th>
+								<td style="text-align: left;">
+									<i>{{meta.req_prod_comment}} / 배포희망 일자 : {{meta.dist_dtm|default_if_none:"--"}}</i>
+								</td>
+							</tr>
+							{% endif %}
+							{% if meta.pl_prod_comment %}
+							<tr>
+								<th style="text-align: left;">
+									{% if meta.pl_prod_yn == "1" %}
+										담당PL 승인
+									{% elif meta.pl_prod_yn == "2" and meta.pl_prod_comment != "" %}
+										<font color="red">담당PL 반려</font>
+									{% elif meta.pl_prod_comment != "" %}
+										이력
+									{% endif %}
+								</th>
+								<th style="text-align: left;">
+									{{meta.id_pl_prod}}
+								</th>
+								<td style="text-align: left;">
+									<i>{{meta.pl_prod_comment}}</i>
+								</td>
+							</tr>
+							{% endif %}
+							{% if meta.id_dba_prod %}
+							<tr>
+								<th style="text-align: left;">
+									{% if meta.dba_prod_yn == "1" %}
+										운영DB 반영
+									{% elif meta.dba_prod_yn == "2" and meta.dba_prod_comment != "" %}
+										<font color="red">운영DB 반려</font>
+									{% elif meta.dba_prod_comment != "" %}
+										 이력
+									{% endif %}
+								</th>
+								<th style="text-align: left;">
+									{{meta.id_dba_prod}}
+								</th>
+								<td style="text-align: left;">
+									<i><font color="blue"><b>{{meta.dba_prod_comment}}</b></font></i>
+								</td>
+							</tr>
+							{% endif %}
+						</table>
+					{% endif %}
+				</div>
+			</section>
+		</div>
+	{% endif %}
+
+
+
+
+
+		<div style="clear: both;">
+			<br>
+			<div class="pull-right">
+			{{form.owner}}
+			{{form.data_tbs}}
+			{{form.ind_tbs}}
+			{{form.grant}}
+			{{form.media}}
+
+
+
+
+
+
+			<a id="btn_meta_create_all_ddl" href="#btn_meta_create_all_ddl_modal" class="modal-with-form btn-sm btn btn-default">CREATE</a>
+			<a id="btn_meta_alter_all_ddl" href="#btn_meta_alter_all_ddl_modal" class="modal-with-form btn-sm btn btn-default">ALTER</a>
+			<div id="btn_meta_create_all_ddl_modal" class="modal-block modal-block-lg mfp-hide">
+				<section class="panel">
+					<header class="panel-heading">
+						<h2 class="panel-title">CREATE TABLE SCRIPT</h2>
+					</header>
+					<div class="panel-body">
+						<div class="modal-wrapper">
+							<textarea class="form-control" id="codemirror_all_sql"></textarea>
+						</div>
+					</div>
+					<footer class="panel-footer">
+						<div class="row">
+							<div class="col-md-12 text-right">
+								<button id="btn_meta_create_all_ddl_close" class="btn btn-default modal-dismiss">닫기</button>
+							</div>
+						</div>
+					</footer>
+				</section>
+			</div>
+			<div id="btn_meta_alter_all_ddl_modal" class="modal-block modal-block-lg mfp-hide">
+				<section class="panel">
+					<header class="panel-heading">
+						<h2 class="panel-title">ALTER TABLE SCRIPT</h2>
+					</header>
+					<div class="panel-body">
+						<div class="modal-wrapper">
+							<textarea class="form-control" id="codemirror_alter_sql"></textarea>
+						</div>
+					</div>
+					<footer class="panel-footer">
+						<div class="row">
+							<div class="col-md-12 text-right">
+								<button id="btn_meta_alter_all_ddl_close" class="btn btn-default modal-dismiss">닫기</button>
+							</div>
+						</div>
+					</footer>
+				</section>
+			</div>
+
+
+			</div>
+			<div class="tabs">
+				<ul class="nav nav-tabs">
+					<li class="active">
+						<a href="#dev_work" data-toggle="tab"><!-- <i class="fa fa-star"></i>  -->요청 상세</a>
+					</li>
+					<li>
+						<a href="#dba_work" data-toggle="tab">DB반영 Script</a>
+					</li>
+				</ul>
+				<div class="tab-content">
+					<div id="dev_work" class="tab-pane active">
+						{% if meta.obj_class <= "2" %}
+							<table class="table table-bordered table-striped mb-none csort" id="datatable-default" data-plugin-options='{"searchPlaceholder": "변경 건 검색 : + 입력"}'>
+								<thead>
+									<tr>
+										<!-- <th style="text-align: center;vertical-align: middle;">구분</th> -->
+										<th class="td_fix_center">순서</th>
+										<th class="td_fix_center">컬럼<br>한글명</th>
+										<th class="td_fix_center">PK</th>
+										<th class="td_fix_center">NOT<br>NULL</th>
+										<th class="td_fix_center">Default</th>
+										<th class="td_fix_center">컬럼<br>영문명</th>
+										<th class="td_fix_center">DataType</th>
+										<th class="td_fix_center">신규/변경</th>
+										<th class="td_fix_center">fk<br>db.tab.col</th>
+										<th class="td_fix_center">개인정보</th>
+										<th class="td_fix_center">표준여부</th>
+										<th class="td_fix_center">DDL</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for data in objects %}
+					                <tr>
+					                    <!-- <td style="text-align: center;">{%if data.div == "신규"%}<b>{{data.div}}</b>{%endif%}</td> -->
+					                    <td class="td_fix_center">{%if data.column_id == 999999 %}{%else%}{{data.column_id|default_if_none:"--"}}{%endif%}</td>
+					                    <td>&nbsp;&nbsp;{{data.col_comments|truncatechars:20}}</td>
+					                    <td class="td_fix_center">{%if data.pk_yn == '1'%}{{data.get_pk_yn_display}}{%endif%}</td>
+					                    <td class="td_fix_center">{%if data.not_null == '1'%}{{data.get_not_null_display}}{%endif%}</td>
+					                    <td class="td_fix_center">{{data.data_default}}</td>
+					                    <td>&nbsp;&nbsp;{{data.column_name|lower}}</td>
+					                    <td>&nbsp;&nbsp;{{data.data_type}}</td>
+					                    <td class="td_fix_center">{{data.change_list}}</td>
+					                    <td class="td_fix_center">{{data.change_reason}}</td>
+					                    <td class="td_fix_center">{{data.get_privacy_list_display}}</td>
+					                    <td class="td_fix_center">{% if data.change_list != "" %}
+					                    		{% get_stdword data.col_comments data.column_name data.data_type meta.id_dblist.id_dbtype.db_type as result %} {% if result == "비표준" %} <font color="red"><b>{{result}}</b></font>{% else %}<font color="blue"><b>{{result}}</b></font>{%endif%}
+					                    	{% endif %} </td>
+					                    <td style="text-align: center;">{% if data.change_list == "+ └ TOBE" or data.change_list == "+ 신규" or data.change_list == "+ 삭제"  %}
+					                    								<a name="btn_meta_create_column_ddl" href="#btn_meta_create_column_ddl_modal" c_id="{{data.id}}" class="modal-with-form btn-xs btn btn-default">DDL</a>
+					                    								{% endif %}</td>
+					                </tr>
+					                {% endfor %}
+								</tbody>
+							</table>
+						{% endif %}
+						<br>
+						<div id="div_obj_class_hidden" style="display: none">{{meta.obj_class}}</div>
+						<div id="div_script" style="clear: both; display: none;">
+							<pre style="margin-bottom: 0px;">
+								<textarea class="text_sql form-control"  id="codemirror_req_script" name="text_sql" >/*******************************************************
+* 운영DB 반영 시에는 사용 금지, DBA 작업 SQL 사용
+*******************************************************/
+
+{{meta.req_script | default_if_none:""}}</textarea> </pre> </div>
+
+					</div>
+					<div id="dba_work" class="tab-pane">
+						<div class="pull-right" style="padding-bottom: 5px">
+							{% if user.is_superuser == True %}
+								<a id="btn_save_dba_script" class="btn-sm btn btn-success">Script 저장</a>
+							{% endif %}
+						</div>
+						<div id="div_script_dtm" class="pull-left" style="font-weight: bold ;font-style: italic;color : red;">{% if meta.script %}<font color=blue><b>* Script 저장 일시 : {{meta.script_dtm|date:"Y/m/d H:i:s"}} ({{meta.id_script_reg_user.first_name}}) </b></font>{%endif%}</div>
+						<div id="div_script" style="clear: both;">
+							<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_save_dba_script" name="text_sql" >{% if user.is_superuser %}{{meta.script|default_if_none:""}}{%endif%}</textarea></pre>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div style="clear: both;">
+			<br>
+		</div>
+		<div style="clear: both;">
+			<br><br>
+		</div>
+	</div>
+
+	<div id="btn_meta_create_column_ddl_modal" class="modal-block modal-block-lg mfp-hide">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">ALTER COLUMN SCRIPT</h2>
+			</header>
+			<div class="panel-body">
+				<div class="modal-wrapper">
+					<textarea class="form-control" id="codemirror_column_sql"></textarea>
+				</div>
+			</div>
+			<footer class="panel-footer">
+				<div class="row">
+					<div class="col-md-12 text-right">
+						<button id="btn_meta_create_column_ddl_close" class="btn btn-default modal-dismiss">닫기</button>
+					</div>
+				</div>
+			</footer>
+		</section>
+	</div>
+
+	{{form.id_dblist}}
+
+
+
+
+
+
+
+
+</form>
+
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+
+
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js' %}"></script>
+<script src="{% static 'assets/javascripts/tables/examples.datatables.editable.js' %}"></script>
+
+<script src="{% static 'custom/js/moment-with-locales.min.js' %}"></script>
+    <script src="{% static 'custom/js/bootstrap-datetimepicker.min.js' %}"></script>
+
+<script>
+	var editor_all_sql
+	var editor_alter_sql
+
+	$('a[name="btn_meta_create_column_ddl"]').click(function(){
+		var c_id = $(this).attr("c_id");
+
+		var sel = document.getElementById('id_owner');
+		var opt = sel.options[sel.selectedIndex];
+		owner = opt.value
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaAlter' %}",
+	      data: { 'c_id' : c_id,
+	      		  'meta_req' : "{{meta.id}}",
+	      		  'owner' : owner,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		editor_column_sql.setValue(json.column_ddl)
+
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	$("#btn_meta_create_all_ddl").click(function(){
+
+
+		var sel = document.getElementById('id_data_tbs');
+		var opt = sel.options[sel.selectedIndex];
+		data_tbs = opt.value
+
+		var sel = document.getElementById('id_ind_tbs');
+		var opt = sel.options[sel.selectedIndex];
+		ind_tbs = opt.value
+
+
+		var sel = document.getElementById('id_grant');
+		var opt = sel.options[sel.selectedIndex];
+		grant = opt.value
+
+		var sel = document.getElementById('id_owner');
+		var opt = sel.options[sel.selectedIndex];
+		owner = opt.value
+
+		console.log('data_tbs : ' + data_tbs)
+		console.log('ind_tbs : ' + ind_tbs)
+		console.log('grant : ' + grant)
+		console.log('owner : ' + owner)
+
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaCreate' %}",
+	      data: { 'data_tbs' : data_tbs,
+	      		  'ind_tbs' : ind_tbs,
+	      		  'grant' : grant,
+	      		  'meta_req' : "{{meta.id}}",
+	      		  'owner' : owner,
+	      		  'id_tablelist' : "{{meta.id_tablelist.id}}",
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      		console.log(json.total_ddl)
+	      		// console.log(editor_all_sql)
+	      		editor_all_sql.setValue(json.total_ddl)
+	      		editor_all_sql.refresh()
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	});
+
+	$("#btn_meta_alter_all_ddl").click(function(){			
+		var c_id = $(this).attr("c_id");
+
+		var sel = document.getElementById('id_owner');
+		var opt = sel.options[sel.selectedIndex];
+		owner = opt.value
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaAlter' %}",
+	      data: { 
+	      		  'meta_req' : "{{meta.id}}",	      		  
+	      		  'c_id' : c_id,
+	      		  'owner' : owner,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      		
+	      		
+	      		editor_alter_sql.setValue(json.column_ddl)
+	      		editor_alter_sql.refresh()
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	});
+
+	$("#btn_save_dba_script").click(function(){
+
+		if (!confirm('저장 시 기존 Script는 복구할 수 없습니다. 진행하시겠습니까?'))
+			return false
+
+
+		var sql = editor_save_dba_script.getValue()
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxSaveDbaScript' %}",
+	      data: { 'sql' : sql,
+	      		  'id_metareq' : "{{meta.id}}",
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      		$("#div_script_dtm").html('<font color=blue><b>* Script 저장 일시 : ' + json.script_dtm + ' (' + json.script_reg_user + ') </b></font>')
+	      		alert("저장되었습니다.")
+	      		location.reload();
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	});
+
+	function set_oper(txt) {
+	    $("#div_hidden_ok").html(txt)
+
+	    if ( txt == "req_prod") {
+		    $("#div_dist_dtm").show();
+		    $("#label_dist_dtm").show();
+		    $("#not_prov_msg").show();
+		}
+	};
+	function f_btn_cancel(txt) {
+
+	    if (!confirm('취소하시겠습니까?'))
+	    	return false
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaCancel' %}",
+	      data: {
+	      		  'div_cancel' : txt,
+	      		  'id_metareq' : '{{meta.id}}',
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if ( json.error_msg == "" )
+	      		{
+		      		alert("취소 되었습니다.")
+		      		location.reload();
+		      	}
+		      	else
+		      	{
+		      		alert(json.error_msg);
+		      	}
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	};
+	function set_message(title,person,status,comment) {
+	    $("#div_ok_title").html(title)
+	    $("#div_ok_message").html('<ul><li>승인자 : ' + person + '</li><li>승인 상태 : <font color="red"><b>' + status + '</b></font></li><li>메시지 : <br>' + comment + "</li></ul>")
+	};
+
+	$("#btn_aceept").click(function(){
+
+		if ( editor_save_dba_script.getValue() == "" )
+		{
+			document.getElementById('btn_aceept_ok').disabled = true;
+			$("#modal_msg").html("<b>개발DB 반영 스크립트 저장이 아직 안됬습니다. <br>승인 전에 반영한 스크립트를 저장해주세요</b>")
+		}
+	})
+
+	$("#btn_aceept_ok").click(function(){
+		var comment = $("#txt_aceept").val()
+		console.log("comment : " + comment)
+
+		var dist_dtm = $("#id_dist_dtm").val()
+		console.log("dist_dtm : " + dist_dtm)
+
+		var today = new Date();
+		// 2020-10-27 02:00
+		today = today.getFullYear().toString() + "-" + String(today.getMonth()+1).padStart(2, '0') + "-" + String(today.getDate()).padStart(2, '0') + " " + String(today.getHours()).padStart(2, '0') + ":" + String(today.getMinutes()).padStart(2, '0')
+		
+		var div_ok = $("#div_hidden_ok").html()		
+
+		if ( div_ok == "req_prod" && dist_dtm <= today ) {
+			alert("운영DB반영 희망일자가 현재 시간보다 작을 수 없습니다. 왼쪽 하단 정기 배포 일자를 확인해주세요")
+			return;
+		}
+
+		if ( dist_dtm == "" ) {
+			
+			alert("배포일자를 입력해주세요")
+			return;
+		}
+
+
+		console.log("div_ok : " + div_ok)
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaReqOK' %}",
+	      data: { 'comment' : comment,
+	      		  'div_ok' : div_ok,
+	      		  'dist_dtm' : dist_dtm,
+	      		  'id_metareq' : '{{meta.id}}',
+	      		  'ok_yn' : '1',
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if ( json.error_msg == "" )
+	      		{
+		      		alert("승인되었습니다.")
+		      		$("#div_"+div_ok).html(json.id_ok_person + "<br>" + json.ok_dtm)
+		      		$("#btn_aceept_no").click();
+		      		location.reload();
+		      	}
+		      	else
+		      	{
+		      		alert(json.error_msg);
+		      	}
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	$("#btn_aceept_reject").click(function(){
+
+		var hidden_ok = $("#div_hidden_ok").html()
+		if( hidden_ok == "req_prod") {
+			alert('운영반영 요청 시 반려는 없습니다')
+		    return false;
+		}
+
+		var comment = $("#txt_aceept").val()
+
+		if ( comment == "" ) {
+			alert('반려 사유를 입력해주세요')
+			return;
+		}
+		console.log("comment : " + comment)
+
+
+		var div_ok = $("#div_hidden_ok").html()
+
+		console.log("div_ok : " + div_ok)
+
+		if (!confirm('정말 반려할까요?'))
+			return false
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxMetaReqOK' %}",
+	      data: { 'comment' : comment,
+	      		  'div_ok' : div_ok,
+	      		  'id_metareq' : '{{meta.id}}',
+	      		  'ok_yn' : '2',
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		alert("반려되었습니다.")
+	      		$("#div_"+div_ok).html(json.id_ok_person + "<br>" + json.ok_dtm)
+	      		$("#btn_aceept_no").click();
+	      		location.reload();
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	$(document).ready(function(e) {
+
+		div_obj_class_hidden = $("#div_obj_class_hidden").html()
+
+		
+		if ( {{meta.obj_class}} != '2' ) {
+			$("#btn_meta_create_all_ddl").hide()
+			$("#btn_meta_alter_all_ddl").hide()
+			
+			document.getElementById('id_owner').disabled = true;
+			document.getElementById('id_data_tbs').disabled = true;
+			document.getElementById('id_ind_tbs').disabled = true;
+			document.getElementById('id_grant').disabled = true;			
+		}
+
+		if ( div_obj_class_hidden > 2 )
+		{
+			$("#div_script").show();
+		}
+
+		$(function() {
+		  $('#id_dist_dtm').datetimepicker({
+		      format: 'YYYY-MM-DD HH:mm'
+		  });
+		});
+
+		document.getElementById('id_id_dblist').disabled = true;
+
+		$('#datatable-default').DataTable({
+		            responsive: true,
+		            "pageLength": 400,
+		            "order": [],
+		            "ordering": false,
+		            // "dom" : 'Brt',
+	        });
+
+		config_select = {
+			mode:  "text/x-sql",
+			theme: "base16-light",
+			smartIndent: true,
+			lineWrapping: true,
+	    };
+
+	    editor_all_sql = CodeMirror.fromTextArea(document.getElementById("codemirror_all_sql"), config_select);
+	    editor_alter_sql = CodeMirror.fromTextArea(document.getElementById("codemirror_alter_sql"), config_select);
+	    editor_column_sql = CodeMirror.fromTextArea(document.getElementById("codemirror_column_sql"), config_select);
+	    editor_save_dba_script = CodeMirror.fromTextArea(document.getElementById("codemirror_save_dba_script"), config_select);
+	    editor_req_script = CodeMirror.fromTextArea(document.getElementById("codemirror_req_script"), config_select);
+	    // editor_req_script = CodeMirror.fromTextArea(document.getElementById("codemirror_req_script"), config_select);
+
+
+	    editor_all_sql.setSize("100%","500px");
+	    editor_alter_sql.setSize("100%","500px");
+	    editor_column_sql.setSize("100%","100%");
+	    editor_save_dba_script.setSize("100%","500px");
+	    editor_req_script.setSize("100%","100%");
+
+
+
+
+
+
+
+
+	});
+
+	$('.tabs a').click(function (e) {
+
+        $(this).tab('show');
+        editor_save_dba_script.refresh();
+
+    });
+
+    // $(function() {
+    //         $( "#id_dist_dtm" ).datepicker({
+    //          format: 'yyyy-mm-dd',
+	   //       });
+    //     });
+
+
+
+
+</script>
+
+
+{%endblock%}
+
+
+
+
+

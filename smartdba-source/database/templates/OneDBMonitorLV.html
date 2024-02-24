@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block extra_head_content  %}
+
+	<!-- <link rel="stylesheet" href="{% static 'custom/css/bootstrap-datetimepicker.css' %}">
+	<script src="{% static 'custom/js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'custom/js/moment.min.js' %}"></script>
+    <script src="{% static 'custom/js/popper.min.js' %}"></script>
+	<script src="{% static 'custom/js/bootstrap4.3.1.min.js' %}"></script>
+    <script src="{% static 'custom/js/moment-with-locales.min.js' %}"></script>
+    <script src="{% static 'custom/js/bootstrap-datetimepicker.min.js' %}"></script> -->
+	
+	
+{% endblock %}
+
+
+
+{% block title %}SmartDBA{% endblock %}
+
+{%block content %}
+
+<header class="page-header">
+    <h2>{{db_nm}} <a href="{% url 'DBAWorkLV' %}"><i class="fa fa-backward" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="뒤로가기"></i></a></h2>
+    <div class="right-wrapper pull-right">
+    	<ol class="breadcrumbs">
+    		<li>
+    			{% if user.is_superuser %}
+	    			<a href="http://{{ request.get_host }}/admin/database/monitortablespace/?q={{id_dbdetail}}" target="blank">
+	    				<button type="button" class="btn btn-xs btn-success">테이블스페이스 임계치 조정</button>
+	    			</a>	    			
+	    			<a href="http://{{ request.get_host }}/admin/database/dbdetailmonitoritemlist/?q={{id_dbdetail}}&o=1" target="blank">&nbsp;
+	    				<button type="button" class="btn btn-xs btn-success">모니터링 임계치 조정</button>
+	    			</a>
+	    			<a href="#">&nbsp;
+	    				{%if alert_yn == '1'%}
+		    				<button id="btn_alert_off" vtype="button" class="btn btn-xs btn-success">Alert 끄기</button>
+		    			{% else %}
+		    				<button id="btn_alert_off" vtype="button" class="btn btn-xs btn-warning">Alert 켜기</button>
+		    			{% endif %}
+	    				
+	    			</a>	    			
+    			{% endif %}
+    		</li>
+    	</ol>&nbsp;&nbsp;&nbsp;&nbsp;	
+    </div>
+
+    <style type="text/css">
+    	.text-primary {
+    		font-weight: bold;
+    		background-color: #F7F9F6;
+    	}
+		pre {
+		            overflow-x: auto;
+		            white-space: pre-wrap;
+		            white-space: -moz-pre-wrap;
+		            white-space: -pre-wrap;
+		            white-space: -o-pre-wrap;
+		            word-wrap: break-word;
+		            background-color: #FFFFFF;
+		            border: 0px dashed #FFFFFF;
+		            padding-top: 0px;
+                    padding-bottom: 0px;
+                    padding-left: 0px;
+                    padding-right: 0px;
+                    float: none;
+                    margin: 0px;
+		}
+
+    </style>
+
+    
+    
+
+    
+
+
+    <link rel="stylesheet" href="{% static 'custom/css/bootstrap-datetimepicker.css' %}">
+    <script src="{% static 'custom/js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+    <script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+    <script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+    <script src="{% static 'assets/javascripts/theme.js' %}"></script>
+    <script src="{% static 'custom/js/merge.js' %}"></script>
+
+    <script src="{% static 'custom/js/Chart.min.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static 'custom/css/bootstrap-datetimepicker.css' %}">
+	<script src="{% static 'custom/js/jquery-3.3.1.min.js' %}"></script>
+    <script src="{% static 'custom/js/moment.min.js' %}"></script>
+    <script src="{% static 'custom/js/popper.min.js' %}"></script>
+	<script src="{% static 'custom/js/bootstrap4.3.1.min.js' %}"></script>
+    <script src="{% static 'custom/js/moment-with-locales.min.js' %}"></script>
+    
+    <!-- 아래 순서 중요 -->
+    <script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+    <script src="{% static 'custom/js/bootstrap-datetimepicker.min.js' %}"></script>
+
+
+	
+
+	
+
+    
+    
+
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+	{%csrf_token%}
+
+	{% if db_detail.sync_os_real_use_thread %}
+	<b>소켓({{db_detail.sync_os_cpu_socket}}), 소켓당Core({{db_detail.sync_os_cpu_socket_core}}), 실사용Core({{db_detail.sync_os_real_use_core}}), 스레드팩터({{db_detail.sync_os_thread_factor}}), 실사용스레드수({{db_detail.sync_os_real_use_thread}}), 메모리({{db_detail.sync_os_memory}})</b>
+	<br><br>
+	{% endif %}
+
+	<div class="tabs">
+		<ul class="nav nav-tabs">
+			<li class="active" class="tabmenu" data-tab="db_stats">
+				<a href="#db_stats" data-toggle="tab">DB/OS Stats</a>
+			</li>
+			{% if id_db_type == 1 and db_order == 1 %}
+			<li class="tabmenu" data-tab="tablespace">
+				<a href="#tablespace" data-toggle="tab">TABLESPACE</a>
+			</li>
+			{% endif %}
+			<li class="tabmenu" data-tab="filesystem">
+				<a href="#filesystem" data-toggle="tab">FileSystem</a>
+			</li>
+		</ul>
+		<div class="tab-content">
+			<div id="db_stats" class="tab-pane active">
+					<div class="row">
+						<div class="col-md-2" style="padding-right: 0px">
+							{{ form.str_date }}	
+						</div>		
+						<div class="col-md-2" style="padding-left: 0px;padding-right: 0px">
+							{{ form.end_date }}	
+						</div>
+
+						<div class="col-md-2" style="padding-left: 0px;padding-right: 0px; vertical-align: middle;" >
+							<!-- {{ form.interval }} -->
+							&nbsp;&nbsp;<button type="submit" class="btn btn-sm btn-default" id="search_button" >조회</button>
+						</div>
+
+					</div>
+					<br>
+
+					<div class="row">
+					{% for graph in graph_draw %}
+						<div class="col-md-4 row" style="padding-left: 30px">
+							<section class="panel">
+								<header class="panel-heading">
+									<h2 class="panel-title">{{graph.0}}</h2>
+								</header>
+								<div class="panel-body">
+
+									<div style="width: 100%;">
+									    <canvas id="{{graph.0}}"></canvas>
+									</div>
+
+								</div>
+							</section>
+						</div>
+
+						<script type="text/javascript">
+							var ctx = document.getElementById("{{graph.0}}").getContext('2d');
+
+				            new Chart(ctx, {
+				              type: 'line',
+				              data: {
+				                labels: [{% for label in graph.2 %} '{{label}}', {% endfor %}],
+				                datasets: [{% for data in graph.1 %}
+				                			{
+				                			label: "{{data.label}}",
+				                			data: [{% for data in data.data %} '{{data}}', {% endfor %}],
+				                			borderColor: "{{data.borderColor}}",
+				                			radius: "{{data.radius}}",
+				                			fill: "{{data.fill}}",
+				                			borderWidth:2
+				                			
+				                		},
+				                		  {% endfor %}],
+				              },
+				              options: {
+				              	animation: {
+				              	            duration: 0 // general animation time
+				              	        },
+				              	hover: {
+				              	            animationDuration: 0 // duration of animations when hovering an item
+				              	        },
+				              	responsiveAnimationDuration: 0, // animation duration after a resize
+
+				                responsive: true,
+				                elements: {
+				                        line: {
+				                            tension: 0
+				                        }
+				                    },
+				                legend: {
+				                  position: 'bottom',
+				                  display: false,
+				                },
+				                scales: {
+				                        xAxes: [{
+				                            display: true,
+				                            ticks: {
+				                                beginAtZero: true
+				                            }
+				                        }],
+				                        yAxes: [{
+				                            display: true,
+				                            ticks: {
+				                                beginAtZero: true,
+				                                suggestedMax: 10
+				                                // stepSize: 5
+				                            }
+				                        }]
+				                    }
+				              }
+				            });
+
+						</script>
+					{% endfor %}
+					</div>
+			</div>
+			{% if id_db_type == 1 and db_order == 1 %}
+			<div id="tablespace" class="tab-pane">
+				<div class="row">
+					<div class="col-md-12" style="padding-left: 30px">
+						<section class="panel">
+							<header class="panel-heading">
+								
+								<h2 class="panel-title">테이블스페이스 모니터링 (90% 이상만 노출)</h2>
+
+							</header>
+							<div class="panel-body">
+
+								<div style="width: 100%;">
+								    <canvas id="canvas_tablespace"></canvas>
+								</div>
+
+							</div>
+						</section>
+					</div>
+				</div>
+			</div>
+			{% endif %}
+			<div id="filesystem" class="tab-pane">
+				<div id="tablespace" class="tab-pane">
+					<div class="row">
+						<div class="col-md-12" style="padding-left: 30px">
+							<section class="panel">
+								<header class="panel-heading">
+									
+									<h2 class="panel-title">파일시스템 모니터링</h2>
+
+								</header>
+								<div class="panel-body">
+
+									<div style="width: 100%;">
+									    <canvas id="canvas_filesystem"></canvas>
+									</div>
+
+								</div>
+							</section>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	
+
+	
+
+</form>
+
+
+
+
+
+
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+	$(function() {
+	  $('#id_str_date').datetimepicker({
+	      format: 'YYYY-MM-DD HH:mm'
+	  });
+	});
+	$(function() {
+	  $('#id_end_date').datetimepicker({
+	      format: 'YYYY-MM-DD HH:mm'
+	  });
+	});
+})
+
+$("#btn_alert_off").click(function(){
+
+	// if (!confirm('저장 시 기존 Script는 복구할 수 없습니다. 진행하시겠습니까?'))
+	// 	return false
+
+	$.ajax({
+      type: "POST",
+      url: "{% url 'ajaxDbAlertOff' %}",
+      data: { 'id_dbdetail' : "{{id_dbdetail}}",
+              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+      dataType: "json",
+      "success": function(json) {      		
+      		if ( json.result == 'ok')
+      		{
+	      		alert("변경 되었습니다")	      		
+	      		location.href="http://{{ request.get_host }}/database/DBAWorkLV/";
+	      	}
+        },
+        beforeSend:function(){
+
+		},
+	    complete:function(){
+
+	    },
+
+      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+      },
+	});
+});
+
+	$(function() {
+		// tab operation
+		$('.tabmenu').click(function() {
+			var activeTab = $(this).attr('data-tab');
+
+			$.ajax({
+			      type: "POST",
+			      url: "{% url 'ajaxOneDBMonitorLV' %}",
+			      data: {
+			      		  'activeTab' : activeTab,
+			      		  'id_dbdetail' : '{{id_dbdetail}}',
+			              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+			      dataType: "json",
+			      "success": function(json) {
+
+			      		var ctx = document.getElementById("canvas_"+activeTab).getContext('2d');
+			      		
+					    new Chart(ctx, {
+					      type: 'line',
+					      data: {
+					        labels: json.labels,
+					        datasets: json.item,
+					      },
+					      options: {
+					        responsive: true,
+					        elements: {
+					                line: {
+					                    tension: 0
+					                }
+					            },
+					        legend: {
+					          position: 'right',
+					          display: true,
+					        },
+					        scales: {
+					                
+					                yAxes: [{
+					                    display: true,
+					                    ticks: {
+					                        max: json.ymax,
+					                        min: json.ymin,
+					                    }
+					                }]
+					            }
+					      }
+					    });
+
+			        },
+			        beforeSend:function(){
+
+					},
+				    complete:function(){
+
+				    },
+
+			      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+			      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+			      },
+				});
+		});		
+	});
+
+
+	
+
+</script>
+
+{%endblock%}
+
+
+
+
+
+

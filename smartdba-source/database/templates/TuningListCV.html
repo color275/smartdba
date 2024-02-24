@@ -1,0 +1,204 @@
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load widget_tweaks %}
+<!-- {% load crispy_forms_tags %} -->
+
+{% block title %}SmartDBA{% endblock %}
+
+{%block content %}
+
+<head>
+
+
+	 <style type="text/css">
+	 	.field-label {
+	 	    font-weight: normal;
+	 	}
+	 	.field-helptext {
+	 	    font-size: 12px;
+	 	}
+	 	.field-error {
+	 	    font-size: 14px;
+	 	    color: red;
+	 	}
+	 	.field-required {
+	 	    font-weight: bold;
+	 	}
+	 	.field-required:after {
+	 	    content: " *";
+	 	    color: red;
+	 	}
+
+	 </style>
+
+</head>
+
+<form method="POST" action="#" >
+{%csrf_token%}
+<header class="page-header">
+	<!-- insert -->
+	<h2>SQL 성능 개선 요청 - 등록</h2>
+
+	<!-- update -->
+	<!-- <h2>SQL 성능 개선 요청 - 수정</h2> -->
+</header>
+<div class="container">
+<br>
+
+
+{% for field in form %}
+   {% if field.label in '튜너의견(튜너 작성)' %}
+    <button type="submit" class="btn btn-primary">완료</button>
+	<a type="button" href="{% url 'TuningListLV' %}" class="btn btn-primary">목록으로</a>
+   	<div class="row">
+	   	<div class="col-md-8">
+	   		<hr style="border: 2px">
+	   	</div>
+	   	<div class="col-md-8">
+	   		<h4><b><font color="red">[안내]</font> 여기서 부터는 튜너 작성</b></h4>
+	   	</div>
+	   	<div class="col-md-8">
+	   		<hr style="border: 2px">
+	   	</div>
+   </div>
+   {% endif %}
+    <div class="row">
+
+       <div class="col-md-2">
+        <label class="field-label{% if field.field.required  %} field-required{%endif%} text-primary" for="{{ field.name }}">{{ field.label }}</label>
+        {% if field.help_text %}
+          <sup><br>{{ field.help_text }}</sup>
+        {% endif %}
+        <font color=red><b>{{ field.errors }}</b></font>
+        <br><br>
+       </div><div class="col-md-6 pull-left">
+         {% if field.label in '등록자,업무도메인명,프로젝트리스트,DB용도' %}
+         	<div class="col-md-6">
+	         	{{ field }}
+	        </div>
+         	<br><br>
+         {% elif field.label in '배포일자,신규or변경,튜닝진행상태,튜닝 전 응답 시간(초),튜닝 후 기대 응답 시간(초),평균 결과 건수,일 실행 횟수' %}
+	         <div class="col-md-7">
+	         	{{ field | attr:"class:form-control"}}
+	         </div>
+         	<br>
+         {% elif field.label in 'SQL_ID' %}
+	         <div class="col-md-12">
+	         	<a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=36145772" target="blank">클릭 : SQL ID 가이드</a>
+	         	{{ field | attr:"class:form-control"}}
+	         	<br>
+	         </div>
+         {% else %}
+	         <div class="col-md-12">
+	         	{{ field | attr:"class:form-control"}}
+	         	<br>
+	         </div>
+         {% endif %}
+
+       </div>
+    </div>
+ {% endfor %}
+
+<!-- insert -->
+<button type="submit" class="btn btn-primary">완료</button>
+<a type="button" href="{% url 'TuningListLV' %}" class="btn btn-primary">목록으로</a>
+
+
+
+{{ form.media }}
+
+<!-- </div> -->
+
+</form>
+
+
+<link href="{% static 'custom/css/summernote.min.css' %}" rel="stylesheet">
+<script src="{% static 'custom/js/summernote.min.js' %}"></script>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+
+		$('#id_bind_value').summernote({
+			height: 200,
+			width: 1000,			
+			toolbar: []
+		});
+
+
+		$('#id_bind_value').summernote('code', '<table class="table table-bordered"><tbody><tr><td><b style="background-color: rgb(255, 255, 255); color: rgb(255, 0, 0);">바인딩 변수</b></td><td><b style="color: rgb(255, 0, 0); background-color: rgb(255, 255, 255);">바인딩 값</b></td></tr><tr><td>prd_cd</td><td>ex : 12345</td></tr><tr><td>start_dt</td><td>ex : 20200313</td></tr><tr><td><br></td><td><br></td></tr></tbody></table>');
+
+		$('#id_sql_info').summernote({
+		  	height: 200,
+		  	width: 1000,
+		  	toolbar: [['font', ['bold', 'italic', 'underline', 'clear']], ['color', ['color']], ]		  	
+		}).on("summernote.enter", function(we, e) { $(this).summernote("pasteHTML", "<br><br>"); e.preventDefault(); });	
+
+		$('#id_tuning_info').summernote({
+		  	height: 200,
+		  	width: 1000,
+		  	toolbar: [['font', ['bold', 'italic', 'underline', 'clear']], ['color', ['color']], ]		  	
+		}).on("summernote.enter", function(we, e) { $(this).summernote("pasteHTML", "<br><br>"); e.preventDefault(); });	
+
+		$('#id_asis_sql_text').summernote({
+		  	height: 200,
+		  	width: 1000,
+		  	toolbar: [['font', ['bold', 'italic', 'underline', 'clear']], ['color', ['color']], ]		  	
+		}).on("summernote.enter", function(we, e) { $(this).summernote("pasteHTML", "<br><br>"); e.preventDefault(); });		
+
+		$('#id_tobe_sql_text').summernote({
+		  	height: 200,
+		  	width: 1000,
+		  	toolbar: [['font', ['bold', 'italic', 'underline', 'clear']], ['color', ['color']], ]		  	
+		}).on("summernote.enter", function(we, e) { $(this).summernote("pasteHTML", "<br><br>"); e.preventDefault(); });	
+
+
+
+
+		$('#id_tobe_sql_text').summernote({
+		  	height: 200,
+		  	width: 1000,
+		  	toolbar: [['font', ['bold', 'italic', 'underline', 'clear']], ['color', ['color']], ]		  	
+		}).on("summernote.enter", function(we, e) { $(this).summernote("pasteHTML", "<br><br>"); e.preventDefault(); });	
+
+		
+
+		$('#id_asis_plan').summernote({
+		  	height: 200,
+		  	width: 1000,
+		  	toolbar: [['font', ['bold', 'italic', 'underline', 'clear']], ['color', ['color']], ]		  	
+		}).on("summernote.enter", function(we, e) { $(this).summernote("pasteHTML", "<br><br>"); e.preventDefault(); });	
+
+		$('#id_tobe_plan').summernote({
+		  	height: 200,
+		  	width: 1000,
+		  	toolbar: [['font', ['bold', 'italic', 'underline', 'clear']], ['color', ['color']], ]		  	
+		}).on("summernote.enter", function(we, e) { $(this).summernote("pasteHTML", "<br><br>"); e.preventDefault(); });	
+
+		$('#id_title').focus();
+
+	});
+
+	$(function() {
+            $( "#id_dist_dtm" ).datepicker({
+             format: 'yyyy-mm-dd'
+	         });
+        });
+
+</script>
+
+
+
+
+
+
+
+
+{%endblock%}
+
+
+
+
+
+

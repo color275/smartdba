@@ -1,0 +1,106 @@
+
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        /*th, td { white-space: nowrap; }*/
+    </style>
+</head>
+
+<header class="page-header">
+    <h2>데이터 조회 권한 요청</h2>    
+    <div class="right-wrapper pull-right">
+      <ol class="breadcrumbs">
+        <li>
+          {% if user.is_superuser %}          
+            <a href="http://{{ request.get_host }}/admin/database/datarequest/" target="blank">&nbsp;
+              <button type="button" class="btn btn-xs btn-success">Admin</button>
+            </a>
+          {% endif %}
+        </li>
+      </ol>&nbsp;&nbsp;&nbsp;&nbsp; 
+    </div>
+</header>
+
+
+<!-- start: page -->
+<a id="btn_sql" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-default" href="{% url 'DataRequestCV' %}" > <i class="fa fa-youtube-play"></i> 데이터 조회 권한 요청</a>
+<form method="POST" action="#"  >
+
+    {% csrf_token %}
+
+    <section class="panel">
+        <div class="panel-body">
+            <table class="table table-bordered table-striped mb-none csort" id="datatable-default" data-plugin-options='{"searchPlaceholder": "결과 내 검색"}'>
+                <thead>
+                    <tr>
+                        <th style="text-align: center;">#</th>
+                        <th style="text-align: center;">제목</th>
+                        <th style="text-align: center;">요청데이터</th>
+                        <th style="text-align: center;">등록자</th>
+                        <th style="text-align: center;">등록일자</th>
+                        <th style="text-align: center;">수정일자</th>
+                        <th style="text-align: center;">검토자</th>
+                        <th style="text-align: center;">검토여부</th>
+                        <th style="text-align: center;">데이터 조회 가능시간</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in object_list %}
+                        <tr>
+                            <td style="text-align: center;">{{data.id}}</td>
+                            <td><a href="{% url 'DataRequestUV' data.id %}">{{data.data_title|truncatechars:20}}</a></td>
+                            <td>{{data.id_datalist|default_if_none:"--"|truncatechars:20}}</td>
+                            <td style="text-align: center;">{{data.id_reg_user}}</td>
+                            <td style="text-align: center;">{{data.reg_dtm|date:"Y/m/d H:i"}}</td>
+                            <td style="text-align: center;">{{data.mod_dtm|date:"Y/m/d H:i"}}</td>
+                            <td style="text-align: center;">{{data.id_prov_user|default_if_none:"--"}}</td>
+                            <td style="text-align: center;">{{data.get_prov_yn_display}}</td>
+                            <td style="text-align: center;">{% if data.poss_view_dtm  %} {{data.poss_view_dtm|date:"Y/m/d"}} 까지 {%endif%}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+
+<!-- end: page -->
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js' %}"></script>
+<script src="{% static 'custom/js/cookie.js' %}"></script>
+
+<script>
+    $('#datatable-default').DataTable({
+            responsive: true,
+            "pageLength": 50,
+            "order": []
+        });
+</script>
+
+
+
+
+{%endblock%}
+
+
+
+
+

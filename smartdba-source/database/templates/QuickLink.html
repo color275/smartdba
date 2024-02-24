@@ -1,0 +1,1097 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load database_extras %}
+
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+        canvas {
+            display:inline-block;
+        }
+
+        #datatable-default td {
+        	padding-bottom: 2px;
+        	padding-right: 2px;
+        	padding-top: 2px;
+        	padding-left: 2px;
+        	text-align: center;
+        }
+
+
+
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>바로가기<br></h2>
+	
+
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+	</style>
+
+
+</header>
+
+<!-- start: page -->
+<form id="tablelist" method="POST"   >
+
+	{% csrf_token %}
+
+	<section role="main" >
+		<div class="row">
+			<div class="col-md-6 col-lg-6 col-xl-2">
+				<section class="panel-w panel-featured-left panel-featured-primary">
+					<div class="panel-body">
+						<div class="widget-summary widget-summary-sm">
+							<div class="widget-summary-col widget-summary-col-icon">
+								<div class="summary-icon bg-primary">
+									<i class="fa fa-table"></i>
+								</div>
+							</div>
+							<div class="widget-summary-col">
+								<div class="summary">
+									<h4 class="title">표준 신청</h4>
+									<div class="info">
+										<strong class="amount"><a href="http://{{ request.get_host }}/database/StdWordLV/" target="self">{{req_word_len}}</a> / <a href="http://{{ request.get_host }}/database/StdDomainLV/" target="self">{{req_domain_len}}</a> / <a href="http://{{ request.get_host }}/database/StdDivAttrLV/" target="self">{{req_attr_len}}</a> / <a href="http://{{ request.get_host }}/database/MetaReqLV/" target="self">{{metareq_len}}</a></strong>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
+			<div class="col-md-6 col-lg-6 col-xl-2">
+				<section class="panel-w panel-featured-left panel-featured-primary">
+					<div class="panel-body">
+						<div class="widget-summary widget-summary-sm">
+							<div class="widget-summary-col widget-summary-col-icon">
+								<div class="summary-icon bg-primary">
+									<i class="fa fa-lock"></i>
+								</div>
+							</div>
+							<div class="widget-summary-col">
+								<div class="summary">
+									<h4 class="title">권한 요청</h4>
+									<div class="info">
+										<a id="btn_obj_priv" href="#btn_obj_priv_modal" class="modal-with-form"><strong class="amount">{{obj_priv_len}}</strong></a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				    <div id="btn_obj_priv_modal" class="modal-block modal-block-primary mfp-hide">
+						<section class="panel">
+							<header class="panel-heading">
+								<h2 class="panel-title">권한 요청</h2>
+							</header>
+							<div class="panel-body">
+								<div class="form-group">
+
+									<div class="col-md-13">
+											<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_sql_priv" name="codemirror_sql_priv" >{% for obj in obj_priv %}/*
+	{{obj.id_reg_user}}
+	{{obj.id_objectlist.id_dblist}}
+	신청 사유 : {{obj.req_reason}}
+*/
+GRANT {{obj.priv}} ON {{obj.id_objectlist.owner}}.{{obj.id_objectlist.object_name}} TO {{obj.id_userlist.username}};
+{% endfor %}
+											</textarea></pre>
+									</div>
+								</div>
+							</div>
+							<footer class="panel-footer">
+								<div class="row">
+									<div class="col-md-12 text-right">
+										{% if user.is_superuser %}
+										<button id="btn_grant_priv" type="button" class="col-md-1 control-label btn btn-primary" {%if obj_priv.count == 0 %} disabled {%endif%}>SMS</button>
+										<a href="http://{{ request.get_host }}/admin/database/userrequesttabprivhist/" target="blank"><button type="button" class="btn btn-default btn-default">Admin</button></a>
+										{% endif %}
+										<button id="btn_aceept_no" class="btn btn-default modal-dismiss">닫기</button>
+									</div>
+								</div>
+							</footer>
+						</section>
+					</div>
+				</section>
+
+			</div>
+			<div class="col-md-6 col-lg-6 col-xl-2">
+				<section class="panel-w panel-featured-left panel-featured-primary">
+					<div class="panel-body">
+						<div class="widget-summary widget-summary-sm">
+							<div class="widget-summary-col widget-summary-col-icon">
+								<div class="summary-icon bg-primary">
+									<i class="fa fa-child"></i>
+								</div>
+							</div>
+							<div class="widget-summary-col">
+								<div class="summary">
+									<h4 class="title">계정 활성화 요청</h4>
+									<div class="info">
+										<a id="btn_user_acc" href="#btn_user_acc_modal" class="modal-with-form"><strong class="amount">{{user_acc_len}}</strong></a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div id="btn_user_acc_modal" class="modal-block modal-block-primary mfp-hide">
+						<section class="panel">
+							<header class="panel-heading">
+								<h2 class="panel-title">계정 활성화 요청</h2>
+							</header>
+							<div class="panel-body">
+								<div class="form-group">
+								<div class="col-md-13">
+										<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_sql_user_acc" name="codemirror_sql_user_acc">{% for obj in user_acc %}/*
+   {{obj.oper_cd}} {{obj.id_dblist}}
+   {{obj.id_user_name}}
+*/
+{% if obj.id_dblist.id_dbtype.id == 1 %}
+-- ORACLE
+ALTER USER {{obj.username}} PROFILE GS_DBA;
+ALTER USER {{obj.username}} IDENTIFIED BY "{% get_passwd obj.id_user_name.username as result %}{{result}}";
+ALTER USER {{obj.username}} ACCOUNT UNLOCK;
+ALTER USER {{obj.username}} PROFILE GS_DEV; {% elif obj.id_dblist.id_dbtype.id == 2 or obj.id_dblist.id_dbtype.id == 3 %} -- MYSQL
+ALTER USER {{obj.username | lower }}@'165.243.210.12%' IDENTIFIED BY '{% get_passwd obj.id_user_name.username as result %}{{result}}';
+SET PASSWORD FOR {{obj.username | lower }}@'165.243.210.12%' = PASSWORD('{% get_passwd obj.id_user_name.username as result %}{{result}}'); {% endif %} 
+
+{% endfor %}
+										</textarea></pre>
+								</div>
+							</div>
+							</div>
+							<footer class="panel-footer">
+								<div class="row">
+									<div class="col-md-12 text-right">
+										{% if user.is_superuser %}
+										<button id="btn_user_acc_sms" type="button" class="col-md-1 control-label btn btn-primary" {%if user_acc.count == 0 %} disabled {%endif%} >SMS</span></button>
+										<a href="http://{{ request.get_host }}/admin/database/userrequestaccountopenhist/" target="blank"><button type="button" class="btn btn-default btn-default">Admin</button></a>
+										{% endif %}
+										<button id="btn_aceept_no" class="btn btn-default modal-dismiss">닫기</button>
+									</div>
+								</div>
+							</footer>
+						</section>
+					</div>
+				</section>
+			</div>
+			<div class="col-md-6 col-lg-6 col-xl-2">
+				<section class="panel-w panel-featured-left panel-featured-primary">
+					<div class="panel-body">
+						<div class="widget-summary widget-summary-sm">
+							<div class="widget-summary-col widget-summary-col-icon">
+								<div class="summary-icon bg-primary">
+									<i class="fa fa-trash-o"></i>
+								</div>
+							</div>
+							<div class="widget-summary-col">
+								<div class="summary">
+									<h4 class="title">퇴사자 계정 삭제</h4>
+									<div class="info">
+										<a id="btn_user_acc_delete" href="#btn_user_acc_delete_modal" class="modal-with-form"><strong class="amount">{{user_acc_delete_len}}</strong></a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div id="btn_user_acc_delete_modal" class="modal-block modal-block-primary mfp-hide">
+						<section class="panel">
+							<header class="panel-heading">
+								<h2 class="panel-title">퇴사자 계정 삭제</h2>
+							</header>
+							<div class="panel-body">
+								<div class="form-group">
+								<div class="col-md-13">
+										<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_sql_user_acc_delete" name="codemirror_sql_user_acc_delete" >{% for obj in user_acc_delete %}/*
+   {{obj.oper_cd}} {{obj.db_use}}
+*/
+DROP USER {{obj.username}};
+{% endfor %}
+										</textarea></pre>
+								</div>
+							</div>
+							</div>
+							<footer class="panel-footer">
+								<div class="row">
+									<div class="col-md-12 text-right">
+										{% if user.is_superuser %}
+										<button id="btn_user_acc_delete_sms" type="button" class="col-md-2 control-label btn btn-primary" {%if user_acc_delete.count == 0 %} disabled {%endif%} >DB반영</span></button>
+										{% endif %}
+										<button id="btn_aceept_no" class="btn btn-default modal-dismiss">닫기</button>
+									</div>
+								</div>
+							</footer>
+						</section>
+					</div>
+				</section>
+			</div>
+			<div class="col-md-6 col-lg-6 col-xl-2">
+				<section class="panel-w panel-featured-left panel-featured-primary">
+					<div class="panel-body">
+						<div class="widget-summary widget-summary-sm">
+							<div class="widget-summary-col widget-summary-col-icon">
+								<div class="summary-icon bg-primary">
+									<i class="fa fa-rocket"></i>
+								</div>
+							</div>
+							<div class="widget-summary-col">
+								<div class="summary">
+									<h4 class="title">튜닝 요청</h4>
+									<div class="info">
+										<strong class="amount">{{tuning_len}}</strong>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
+			<div class="col-md-6 col-lg-6 col-xl-2">
+				<section class="panel-w panel-featured-left panel-featured-primary">
+					<div class="panel-body">
+						<div class="widget-summary widget-summary-sm">
+							<div class="widget-summary-col widget-summary-col-icon">
+								<div class="summary-icon bg-primary">
+									<i class="fa fa-support"></i>
+								</div>
+							</div>
+							<div class="widget-summary-col">
+								<div class="summary">
+									<h4 class="title">BMS 요청</h4>
+									<div class="info">
+										<a href="http://10.52.123.23/monitorItemList.do" target="_blank"><strong class="amount">{{bms_len}}</strong></a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
+		</div>
+
+		<br>
+
+
+		<div class="col-md-13">
+			<section class="panel">
+				<header class="panel-heading">
+					<!-- <div class="panel-actions">
+						<a href="#" class="fa fa-caret-down"></a>
+						<a href="#" class="fa fa-times"></a>
+					</div> -->
+
+					<h2 class="panel-title">운영DB 모니터링 ( {{prod_min_dtm.min_dtm}} )</h2>
+				</header>
+				<div class="panel-body">
+
+					<!-- 주황 : FF6501
+					노랑 : FEE101
+					파랑 : 3367CD -->
+
+					<div class="form-group">
+							<div class="col-md-13">
+								<table class="table table-bordered table-striped mb-none csort" id="datatable-default" >
+									<tr>
+										{% for m in prod_monitor %}
+												{% if m.RISK_LEVEL == "2" and m.HA_CASE == 3 %}
+													<td bgcolor="#A0A0A0">
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% elif m.RISK_LEVEL == "-1" %}
+													<td bgcolor="#009764">
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% elif m.RISK_LEVEL == "0" %}
+													<td bgcolor="#3367CD" >
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% elif m.RISK_LEVEL == "1" %}
+													<td bgcolor="#FF6501" >
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% elif m.RISK_LEVEL == "2" %}
+													<td bgcolor="#CB0031" >
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% endif %}
+											{% if forloop.counter|divisibleby:20 %}</tr><tr>{%endif%}
+										{% endfor %}
+									</tr>
+								</table>
+								<!-- <div class="pull-right">
+								<table  style="width: 100px;height: 15px">
+									<tr>
+										<td style="text-align: center" bgcolor="#009764"><font color="white" size="1">정상</font></td>
+										<td style="text-align: center" bgcolor="#3367CD"><font color="white" size="1">주의</font></td>
+										<td style="text-align: center" bgcolor="#FF6501"><font color="white" size="1">심각</font></td>
+										<td style="text-align: center" bgcolor="#CB0031"><font color="white" size="1">장애</font></td>
+									</tr>
+								</table>
+								</div> -->
+							</div>
+						</div>
+
+				</div>
+			</section>
+		</div>
+
+		{% if prod_error_msg %}
+		<div class="col-md-13">
+			<section class="panel">
+				<header class="panel-heading">
+					<!-- <div class="panel-actions">
+						<a href="#" class="fa fa-caret-down"></a>
+						<a href="#" class="fa fa-times"></a>
+					</div> -->
+
+					<h2 class="panel-title">Alerts</h2>
+				</header>
+				<div class="panel-body">
+
+					{% for msg in prod_error_msg %}
+						<div class="alert alert-danger">
+							<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button> {{msg|safe}}
+						</div>
+					{% endfor %}
+
+
+				</div>
+			</section>
+		</div>
+		{% endif %}
+
+
+
+		<div class="col-md-13">
+			<section class="panel">
+				<header class="panel-heading">
+					<!-- <div class="panel-actions">
+						<a href="#" class="fa fa-caret-down"></a>
+						<a href="#" class="fa fa-times"></a>
+					</div> -->
+
+					<h2 class="panel-title">개발DB 모니터링 ( {{dev_min_dtm.min_dtm}} )</h2>
+				</header>
+				<div class="panel-body">
+
+					<!-- 주황 : FF6501
+					노랑 : FEE101
+					파랑 : 3367CD -->
+
+					<div class="form-group">
+							<div class="col-md-13">
+								<table class="table table-bordered table-striped mb-none csort" id="datatable-default" cellspacing="0px" cellpadding="0px">
+									<tr>
+										{% for m in dev_monitor %}
+												{% if m.RISK_LEVEL == "-1" %}
+													<td bgcolor="#009764" >
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% elif m.RISK_LEVEL == "0" %}
+													<td bgcolor="#3367CD" >
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% elif m.RISK_LEVEL == "1" %}
+													<td bgcolor="#FF6501" >
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% elif m.RISK_LEVEL == "2" %}
+													<td bgcolor="#CB0031" >
+													<a href="{% url 'OneDBMonitorLV' m.ID_DBDETAIL %}">
+													<font color="white" size="1">{{m.DB_USE}}</font>
+													</a>
+													</td>
+												{% endif %}
+
+
+										{% endfor %}
+									</tr>
+								</table>
+								<!-- <br>
+								<div class="pull-right">
+								<table  style="width: 100px;height: 5px">
+									<tr>
+										<td style="text-align: center" bgcolor="#009764"><font color="white" size="1">정상</font></td>
+										<td style="text-align: center" bgcolor="#3367CD"><font color="white" size="1">주의</font></td>
+										<td style="text-align: center" bgcolor="#FF6501"><font color="white" size="1">심각</font></td>
+										<td style="text-align: center" bgcolor="#CB0031"><font color="white" size="1">장애</font></td>
+									</tr>
+								</table>
+								</div> -->
+							</div>
+						</div>
+
+				</div>
+			</section>
+		</div>
+
+
+	    <div class="row">
+	    	<div class="col-md-6">
+				<section class="panel">
+				<header class="panel-heading">
+					<!-- <div class="panel-actions">
+						<a href="#" class="fa fa-caret-down"></a>
+						<a href="#" class="fa fa-times"></a>
+					</div> -->
+
+					<h2 class="panel-title">최근 일주일간 DB 요청 처리 건수</h2>
+					<!-- <p class="panel-subtitle">You don't have to do much to get an attractive plot. Create a placeholder, make sure it has dimensions (so Flot knows at what size to draw the plot), then call the plot function with your data.</p> -->
+				</header>
+				<div class="panel-body">
+
+					<div style="width: 100%;">
+						<table class="table table-bordered table-striped mb-none csort" id="datatable-default">
+							<tr>
+								<th>튜닝 신청</th>
+								<th>메타 신청</th>
+								<th>단어 신청</th>
+								<th>도메인 신청</th>
+								<th>용어 신청</th>
+								<th>계정 생성</th>
+								<th>계정 활성화</th>
+								<th>권한 신청</th>
+							</tr>
+							<tr>
+								<td>{{dba_work.TUNING_CNT}}</td>
+								<td>{{dba_work.META_CNT}}</td>
+								<td>{{dba_work.WORD_CNT}}</td>
+								<td>{{dba_work.DOMAIN_CNT}}</td>
+								<td>{{dba_work.ATTR_CNT}}</td>
+								<td>{{dba_work.USER_CREATE_CNT}}</td>
+								<td>{{dba_work.ACCOUNT_CNT}}</td>
+								<td>{{dba_work.PRIV_CNT}}</td>
+							</tr>
+						</table>
+
+					</div>
+
+				</div>
+			</section>
+			</div>
+
+			<div class="col-md-6">
+				<section class="panel">
+					<header class="panel-heading">
+						<!-- <div class="panel-actions">
+							<a href="#" class="fa fa-caret-down"></a>
+							<a href="#" class="fa fa-times"></a>
+						</div> -->
+						<h2 class="panel-title" >계정 생성</h2>
+					</header>
+					<div class="panel-body">
+
+						<div class="form-group">
+
+							<div class="col-md-13">
+								<div class="form-inline">
+
+										<input class="form-control" style="display: none;width: 10%">
+										<input class="form-control" id="txt_create_user" name="txt_create_user" style="width: 400px" placeholder="사번">
+
+										{% if user.is_superuser %}
+										<button id="btn_create_user_ddl" type="button" class="btn btn-primary "  >검색</button>
+										<button id="btn_create_user_ok" type="button" class="btn btn-primary ">SMS</button>
+										{% endif %}
+
+								</div>
+								<div id="div_codemirror_sql_createuser">
+								<br>
+								<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_sql_createuser" name="codemirror_sql_createuser"></textarea></pre>
+								<br>
+								</div>
+								<div id="div_exist_user"></div>
+							</div>
+						</div>
+
+					</div>
+				</section>
+			</div>
+		</div>
+
+
+
+
+
+
+
+    <div class="row">
+		<div class="col-md-6">
+			<section class="panel">
+				<header class="panel-heading">
+					<!-- <div class="panel-actions">
+						<a href="#" class="fa fa-caret-down"></a>
+						<a href="#" class="fa fa-times"></a>
+					</div> -->
+
+					<h2 class="panel-title">SmartDBA 배치 오류</h2>
+					<!-- <p class="panel-subtitle">You don't have to do much to get an attractive plot. Create a placeholder, make sure it has dimensions (so Flot knows at what size to draw the plot), then call the plot function with your data.</p> -->
+				</header>
+				<div class="panel-body">
+					{% if airflow_error %}
+						<div style="width: 100%;">
+							<table class="table table-bordered table-striped mb-none csort" id="datatable-default">
+								<tr>
+									<th>#</th>
+									<th>시간</th>
+									<th>배치명</th>
+									<th>배치 영문명</th>
+									<th>관련 서비스</th>
+									<th>관련 팀</th>
+									<th>요청자</th>
+								</tr>
+								{% for data in airflow_error %}
+								<tr>
+									<td style="text-align: center;"><font color="red"><b>&nbsp;Fail&nbsp;</b></font></td>
+									<td>{{data.EXECUTION_DATE|date:"H:i:s"}}</td>
+									<td>{{data.DAG_NAME}}</td>
+									<td>{{data.DAG_ID}}</td>
+									<td>{{data.SERVICE_NAME}}</td>
+									<td>{{data.TEAM}}</td>
+									<td>{{data.REQ_USER}}</td>								
+								</tr>
+								{% endfor %}
+							</table>
+
+						</div>
+					{% else %}
+					<b>오늘 오류 없음</b>
+					{% endif %}
+
+				</div>
+			</section>
+		</div>
+		<div class="col-md-6">
+			<section class="panel">
+				<header class="panel-heading">
+					<h2 class="panel-title">.</h2>
+				</header>				
+			</section>
+		</div>
+	</div>
+    <div class="row">
+		<div class="col-md-6">
+			<section class="panel">
+				<header class="panel-heading">
+					<!-- <div class="panel-actions">
+						<a href="#" class="fa fa-caret-down"></a>
+						<a href="#" class="fa fa-times"></a>
+					</div> -->
+
+					<h2 class="panel-title">주간 팀 별 사용 인원</h2>
+					<!-- <p class="panel-subtitle">You don't have to do much to get an attractive plot. Create a placeholder, make sure it has dimensions (so Flot knows at what size to draw the plot), then call the plot function with your data.</p> -->
+				</header>
+				<div class="panel-body">
+
+					<div style="width: 100%;">
+					    <canvas id="chart_team_visit_cnt" data-url="{% url 'chart_team_visit_cnt' %}"></canvas>
+					</div>
+
+				</div>
+			</section>
+		</div>
+		<div class="col-md-6">
+			<section class="panel">
+				<header class="panel-heading">
+					<!-- <div class="panel-actions">
+						<a href="#" class="fa fa-caret-down"></a>
+						<a href="#" class="fa fa-times"></a>
+					</div> -->
+
+					<h2 class="panel-title">DB 스토리지 사용량(TB)</h2>
+					<!-- <p class="panel-subtitle">You can update a chart periodically to get a real-time effect by using a timer to insert the new data in the plot and redraw it.</p> -->
+				</header>
+				<div class="panel-body">
+
+					<div style="width: 100%;">
+					    <canvas id="chart_db_size" data-url="{% url 'chart_db_size' %}"></canvas>
+					</div>
+
+				</div>
+			</section>
+		</div>
+	</div>
+
+
+
+
+
+
+
+
+
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'custom/js/Chart.min.js' %}"></script>
+
+
+<!-- 모니터링은 20초 마다 갱신 -->
+{% if user.is_superuser == False %}
+	<script type="text/javascript">
+		window.setTimeout('window.location.reload()',20000); 
+	</script>
+{% endif %}
+
+<script type="text/javascript">
+	window.setTimeout('window.location.reload()',600000); //600초마다 새로고침
+
+	$(document).ready(function() {
+
+
+		// $panel = $('.panel').closest( '.panel' );
+		// $panel.find('.panel-body, .panel-footer').slideUp( 200 );
+
+		$("#div_codemirror_sql_createuser").hide();
+
+		// var button_joinus = document.getElementById('btn_create_user_ok');
+		// button_joinus.disabled = true;
+
+   	    config_select = {
+   	        lineNumbers:false,
+   	        autoRefresh: true,
+   			mode:  "text/x-sql",
+   			theme: "base16-light",
+   			smartIndent: true,
+   			lineWrapping: true,
+   			readOnly: true,
+   	    };
+
+   	    editor_sql_createuser = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_createuser"), config_select);
+   	    editor_sql_createuser.setSize("100%","100%");
+
+   	    editor_sql_priv = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_priv"), config_select);
+   	    editor_sql_priv.setSize("100%","500px");
+
+
+   	    editor_sql_user_acc = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_user_acc"), config_select);
+   	    editor_sql_user_acc.setSize("100%","500px");
+
+   	    editor_sql_user_acc_delete = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_user_acc_delete"), config_select);
+   	    editor_sql_user_acc_delete.setSize("100%","500px");
+	});
+
+	$("#txt_create_user").keyup(function(event) {
+	    if (event.keyCode === 13) {
+		    	$("#btn_create_user_ddl").click();
+		    }
+	});
+
+	$("#btn_obj_priv").click(function(){
+		setTimeout(function() {
+		       editor_sql_priv.refresh();
+		},1);
+	})
+	$("#btn_user_acc").click(function(){
+		setTimeout(function() {
+		       editor_sql_user_acc.refresh();
+		},1);
+	})
+	$("#btn_user_acc_delete").click(function(){
+		setTimeout(function() {
+		       editor_sql_user_acc_delete.refresh();
+		},1);
+	})
+
+	$("#btn_create_user_ok").click(function(){
+
+		var name = $("#name").html()
+
+		if(confirm(name + "에게 생성 메시지를 발송 하시겠어요? DB반영 완료 후 진행되어야 합니다.") == false) {
+		    return false;
+		}
+
+		var user_id = $("#user_id").html()
+		var username = $("#username").html()
+
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxCreateUser' %}",
+	      data: { 'user_id' : user_id,
+			      'username' : username,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.result == "OK")
+	      		{
+	      			alert(name + '에게 생성 메시지가 발송되었습니다.')
+	      			var button_joinus = document.getElementById('btn_create_user_ok');
+		      		button_joinus.disabled = true;
+		      		location.reload();
+	      		}
+
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+	$("#btn_create_user_ddl").click(function(){
+
+		$("#div_codemirror_sql_createuser").show();
+
+		var sabun = $("#txt_create_user").val()
+
+		sabun = sabun.replace(' ','')
+
+		if( sabun == "") {
+			alert("사번을 입력해주세요")
+		    return false;
+		}
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxCreateUserFromSabun' %}",
+	      data: { 'sabun' : sabun,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		editor_sql_createuser.setValue(json.sql)
+	      		$("#user_id").html(json.user_id)
+	      		$("#username").html(json.username)
+	      		$("#name").html(json.name)
+
+	      		var button_joinus = document.getElementById('btn_create_user_ok');
+	      		button_joinus.disabled = false;
+
+	      		td_html = '<table width="95%%" style="white-space: nowrap;" id="exist-user-datatable" class="table table-bordered table-striped mb-none csort" ><thead><tr><th>DB용도</th><th>운영구분</th><th>이름</th><th>계정명</th></tr></thead>'
+
+
+	      		$.each(json.exist_user, function(i, val){
+	      			td_html += "<tr>"
+	      			td_html += "<td>"
+	      			td_html += val.db_use
+	      			td_html += "</td>"
+	      			td_html += "<td>"
+	      			td_html += val.oper_cd
+	      			td_html += "</td>"
+	      			td_html += "<td>"
+	      			td_html += val.name
+	      			td_html += "</td>"
+	      			td_html += "<td>"
+	      			td_html += val.username
+	      			td_html += "</td>"
+	      			td_html += "</tr>"
+                });
+
+                td_html += "</table>"
+
+                $("#div_exist_user").html(td_html)
+
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	$("#btn_grant_priv").click(function(){
+		// #################################################################
+		// ## submitRequest
+		// #################################################################
+
+		if(confirm("최종 권한 반영을 하시겠어요? DB반영 완료 후 진행되어야 합니다.") == false) {
+		    return false;
+		}
+
+
+		console.log("click request")
+
+
+		obj_priv = $("#obj_priv").html();
+		console.log(obj_priv)
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxExecuteUserPriv' %}",
+	      data: { 'obj_priv' : obj_priv,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      	alert("권한 반영이 완료되었습니다.")
+	      	location.reload();
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	$("#btn_user_acc_delete_sms").click(function(){
+		// #################################################################
+		// ## submitRequest
+		// #################################################################
+
+		if(confirm("퇴사자 계정 삭제를 하시겠어요? DB반영 완료 후 진행되어야 합니다.") == false) {
+		    return false;
+		}
+
+		console.log("click request")
+
+
+		user_acc_delete = $("#user_acc_delete").html();
+		console.log(user_acc_delete)
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxExecuteUserDrop' %}",
+	      data: { 'user_acc_delete' : user_acc_delete,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      	alert("퇴사자 계정 삭제가 완료되었습니다.")
+	      	location.reload();
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	$("#btn_user_acc_sms").click(function(){
+		// #################################################################
+		// ## submitRequest
+		// #################################################################
+
+		if(confirm("최종 계정 반영을 하시겠어요? DB반영 완료 후 진행되어야 합니다.") == false) {
+		    return false;
+		}
+
+		console.log("click request")
+
+
+		user_acc = $("#user_acc").html();
+		console.log(user_acc)
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxExecuteUserActivation' %}",
+	      data: { 'user_acc' : user_acc,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      	alert("계정 활성화가 완료되었습니다.")
+	      	location.reload();
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	$(function () {
+
+	      var $populationChart = $("#chart_team_visit_cnt");
+
+	      $.ajax({
+	        url: $populationChart.data("url"),
+	        success: function (data) {
+
+	          var ctx = $populationChart[0].getContext("2d");
+
+	          new Chart(ctx, {
+	            type: 'horizontalBar',
+	            data: {
+	              labels: data.labels,
+	              datasets: [{
+	                label: '명',
+	                backgroundColor: data.backgroundColor,
+	                data: data.data
+	              }]
+	            },
+	            options: {
+	              responsive: true,
+	              legend: {
+	                position: 'bottom',
+	              },
+	              // title: {
+	              //   display: true,
+	              //   text: '팀 별 사용 인원(Week)'
+	              // },
+	              scales: {
+	                      xAxes: [{
+	                          display: true,
+	                          ticks: {
+	                              beginAtZero: true
+	                          }
+	                      }],
+	                      yAxes: [{
+	                          display: true,
+	                          ticks: {
+	                              beginAtZero: true
+	                          }
+	                      }]
+	                  }
+	            }
+	          });
+
+	        },
+	        error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+	      });
+	    });
+
+	$(function () {
+
+	      var $populationChart = $("#chart_db_size");
+	      console.log($populationChart.data("url"))
+	      $.ajax({
+	        url: $populationChart.data("url"),
+	        success: function (data) {
+
+	          var ctx = $populationChart[0].getContext("2d");
+
+	          new Chart(ctx, {
+	            type: 'line',
+	            data: {
+	              labels: data.labels,
+	              datasets: data.item
+	            },
+	            options: {
+	              responsive: true,
+	              elements: {
+	                      line: {
+	                          tension: 0
+	                      }
+	                  },
+	              // bezierCurve: false,
+	              legend: {
+	                position: 'bottom',
+	              },
+	              // title: {
+	              //   display: true,
+	              //   text: 'DB 스토리지 사용량(TB)'
+	              // },
+	              scales: {
+	                      xAxes: [{
+	                          display: true,
+	                          ticks: {
+	                              beginAtZero: true
+	                          }
+	                      }],
+	                      yAxes: [{
+	                          display: true,
+	                          ticks: {
+	                              beginAtZero: true
+	                          }
+	                      }]
+	                  }
+	            }
+
+	          });
+
+	        },
+	        error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+	      });
+	    });
+
+</script>
+
+{%endblock%}
+
+
+

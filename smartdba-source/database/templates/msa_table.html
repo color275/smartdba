@@ -1,0 +1,178 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>DDL 생성 </h2>
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+
+	{% csrf_token %}
+	
+
+	<div class="panel-body">
+	<a href="https://docs.google.com/spreadsheets/d/1SDjOVFaM_zGFObbsBSvofFkcHtT51siQxp9LdZtXBQQ/edit#gid=132997696" target="_blank" class="pull-right mb-xs mt-xs mr-xs btn btn-sm btn-success" id="btn_apply" >신청서 열기</a>			
+
+
+		{% if err_message %}
+			<b>
+			<font color="red">
+				<ul>
+					{% for msg in err_message %}
+						{{msg|safe}}
+					{% endfor %}
+				</ul>
+			</font>
+			</b>
+			<br>
+		{% endif %}
+
+		<font color="blue"><b><h5>* 테이블 개수 : {{table_cnt}}</h5></b></font>
+		<div class="tabs">
+			<ul class="nav nav-tabs">
+				<li class="active">
+					<a href="#dev_work" data-toggle="tab">테이블 상세</a>
+				</li>
+				<li>
+					<a href="#dba_work" data-toggle="tab">DB반영 Script</a>
+				</li>
+			</ul>
+			<div class="tab-content">
+				<div id="dev_work" class="tab-pane active">
+					<table class="table table-bordered table-striped mb-none" id="msa_table">
+						<thead>
+							<tr>
+								
+								<th>#</th>
+								<th>컬럼순서</th>
+								<th>테이블한글명</th>						
+								<th>테이블영문명</th>
+								<th>컬럼한글명</th>
+								<th>PK</th>
+								<th>NotNull여부</th>
+								<th>Default값</th>
+								<th>컬럼영문명</th>
+								<th>데이터타입</th>
+								<th>도메인</th>
+								<th>표준여부</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for data in meta_list %}
+								{%if data.COLUMN_ID == 1 %}
+									<tr>							
+										<td bgcolor="#ffcc99">{{data.NO}}</td>
+										<td bgcolor="#ffcc99">{{data.COLUMN_ID}}</td>
+										<td bgcolor="#ffcc99">{{data.KOR_TABLE_NAME}}</td>							
+										<td bgcolor="#ffcc99">{{data.ENG_TABLE_NAME}}</td>
+										<td bgcolor="#ffcc99">{{data.KOR_COLUMN_NAME}}</td>
+										<td bgcolor="#ffcc99">{{data.PK}}</td>
+										<td bgcolor="#ffcc99">{{data.NOT_NULL}}</td>
+										<td bgcolor="#ffcc99">{{data.DEFAULT}}</td>
+										<td bgcolor="#ffcc99">{{data.ENG_COLUMN_NAME}}</td>
+										<td bgcolor="#ffcc99">{{data.DATA_TYPE}}</td>
+										<td bgcolor="#ffcc99">{{data.INFO_TYPE}}</td>
+										<td bgcolor="#ffcc99">{{data.STD_YN|safe}}</td>
+									</tr>
+								{%else%}
+									<tr>							
+										<td>{{data.NO}}</td>
+										<td>{{data.COLUMN_ID}}</td>
+										<td>{{data.KOR_TABLE_NAME}}</td>							
+										<td>{{data.ENG_TABLE_NAME}}</td>
+										<td>{{data.KOR_COLUMN_NAME}}</td>
+										<td>{{data.PK}}</td>
+										<td>{{data.NOT_NULL}}</td>
+										<td>{{data.DEFAULT}}</td>
+										<td>{{data.ENG_COLUMN_NAME}}</td>
+										<td>{{data.DATA_TYPE}}</td>
+										<td>{{data.INFO_TYPE}}</td>
+										<td>{{data.STD_YN|safe}}</td>
+									</tr>
+								{%endif%}
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				<div id="dba_work" class="tab-pane">												
+					<div id="div_script" style="clear: both;">
+						<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_save_dba_script" name="text_sql" >{{ddl}}</textarea></pre>
+					</div>
+				</div>
+			</div>
+		</div>
+					
+		
+	</div>		
+	
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js' %}"></script>
+
+<script>
+	let editor_select;
+	$(document).ready(function() {
+	 
+	  config_select = {
+	  			mode:  "text/x-sql",
+	  			theme: "base16-light",
+	  			smartIndent: true,
+	  			lineWrapping: true,
+	  	    };
+
+    editor_save_dba_script = CodeMirror.fromTextArea(document.getElementById("codemirror_save_dba_script"), config_select);
+    editor_save_dba_script.setSize("100%","1000px");
+
+	  
+	});
+
+	
+
+    $('.tabs a').click(function (e) {
+
+        $(this).tab('show');
+        editor_save_dba_script.refresh();
+
+    });
+
+    
+
+    
+
+    
+    
+</script>
+
+
+{%endblock%}
+
+
+
+
+

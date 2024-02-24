@@ -1,0 +1,293 @@
+
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}SmartDBA{% endblock %}
+
+{%block content %}
+
+<header class="page-header">
+    <h2>{{objects.DB_NM}}_{{objects.REQ_NO}}_{% now "Ymd" %}.sql</h2>
+
+    <style type="text/css">
+    	.text-primary {
+    		font-weight: bold;
+    		background-color: #F7F9F6;
+    	}
+		pre {
+		            overflow-x: auto;
+		            white-space: pre-wrap;
+		            white-space: -moz-pre-wrap;
+		            white-space: -pre-wrap;
+		            white-space: -o-pre-wrap;
+		            word-wrap: break-word;
+		            background-color: #FFFFFF;
+		            border: 0px dashed #FFFFFF;
+		            padding-top: 0px;
+                    padding-bottom: 0px;
+                    padding-left: 0px;
+                    padding-right: 0px;
+                    float: none;
+                    margin: 0px;
+		}
+
+    </style>
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+{%csrf_token%}
+	<a type="button" id="btn_ok" class="mb-xs mt-xs mr-xs btn btn-sm btn-success pull-right">반영완료</a>
+	<!-- <button id="btn_ok" type="button" class="mb-xs mt-xs mr-xs btn-sm btn-primary pull-right">반영완료</button> -->
+	<a type="button" href="{% url 'DBAWorkLV' %}" class="mb-xs mt-xs mr-xs btn btn-sm btn-primary pull-right">목록으로</a>
+
+	<div class="tabs">
+		<ul class="nav nav-tabs">
+			<li class="active">
+				<a href="#req_info" data-toggle="tab">변경 요청 정보</a>
+			</li>
+			<li>
+				<a href="#modify_ddl" data-toggle="tab">DDL 보정</a>
+			</li>
+		</ul>
+		<div class="tab-content">
+			<div id="req_info" class="tab-pane active">
+				<table class="table table-bordered mb-none">
+					<tr>
+						<td style="text-align: center; width: 10%" class="text-primary">요청번호</td>
+						<td style="text-align: center;">{{objects.REQ_NO}}</td>
+						<td style="text-align: center;" class="text-primary">데이터베이스</td>
+						<td style="text-align: center;">{{objects.DB_NM}}</td>
+						<td style="text-align: center;" class="text-primary">요청상태</td>
+						<td style="text-align: center;">{{objects.PROCSS_STATUS}}</td>
+						<td style="text-align: center;" class="text-primary">요청자</td>
+						<td style="text-align: center;">{{objects.REQ_USER}}</td>
+						<td style="text-align: center;" class="text-primary">요청일시</td>
+						<td style="text-align: center;">{{objects.REQ_DT}}</td>
+
+					</tr>
+					<tr>
+						<td style="text-align: center;" class="text-primary">요청자 설명</td>
+						<td colspan=9 >{{objects.REQ_EXPLAIN|default_if_none:"--"}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: center;" class="text-primary">DA 설명</td>
+						<td colspan=9 >{{objects.DBA_EXPLAIN|default_if_none:"--"}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: center;" class="text-primary">DDL</td>
+						<td colspan=9 >
+							<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_req_sql" name="codemirror_req_sql" >{{objects.DDL}}</textarea></pre>
+						</td>
+					</tr>
+				</table>
+
+
+			</div>
+			<div id="modify_ddl" class="tab-pane">
+				<table class="table table-bordered mb-none" style="table-layout: fixed">
+					<tr style="text-align: center;">
+						<td class="text-primary" style="vertical-align: middle;padding: 0px; width:5%">OWNER</td>
+						<td style="text-align: center; vertical-align: middle;padding: 10px;">
+							{{form.choice_owner}}
+						</td>
+						<td class="text-primary" style="vertical-align: middle;padding: 0px; width:5%">ROLE</td>
+						<td style="vertical-align: middle;padding: 10px">
+							{{form.choice_role}}
+						</td>
+						<td class="text-primary" style="vertical-align: middle;padding: 0px">DATA TABLESPACE</td>
+						<td style="vertical-align: middle;padding: 10px">
+							{{form.choice_tab_tbs}}
+						</td>
+						<td class="text-primary" style="vertical-align: middle;padding: 0px">INDEX TABLESPACE</td>
+						<td style="vertical-align: middle;padding: 10px">
+							{{form.choice_ind_tbs}}
+						</td>
+						<td class="text-primary" style="vertical-align: middle;padding: 0px; width:10%">
+							<a type="button" id="modifyDDL" class="mb-xs mt-xs mr-xs btn btn-sm btn-primary">DDL보정</a>
+						</td>
+					</tr>
+				</table>
+				<br>
+				<table class="table table-bordered mb-none" style="table-layout: fixed">
+					<tr style="text-align: center;">
+						<td class="text-primary" style="max-width: 50%">Before</td>
+						<td class="text-primary" style="max-width: 50%">After</td>
+					</tr>
+					<tr>
+						<td>
+							<div>
+								<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_before_sql" name="codemirror_before_sql" >{{objects.DDL}}</textarea></pre>
+							</div>
+						</td>
+						<td>
+							<div>
+								<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_after_sql" name="codemirror_after_sql" ></textarea></pre>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+
+<input type="hidden" id="is_superuser" value="{{request.user.is_superuser}}"></input>
+</form>
+
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'custom/js/merge.js' %}"></script>
+
+
+<script type="text/javascript">
+	$(document).ready(function() {
+   	    config_select = {
+   	        lineNumbers:false,
+   			mode:  "text/x-sql",
+   			theme: "base16-light",
+   			smartIndent: true,
+   			lineWrapping: true,
+   			readOnly: true,
+   	    };
+
+   	    editor_req_sql = CodeMirror.fromTextArea(document.getElementById("codemirror_req_sql"), config_select);
+   	    editor_req_sql.setSize("100%","100%");
+
+   	    editor_before_sql = CodeMirror.fromTextArea(document.getElementById("codemirror_before_sql"), config_select);
+   	    editor_before_sql.setSize("100%","100%");
+
+   	    editor_after_sql = CodeMirror.fromTextArea(document.getElementById("codemirror_after_sql"), config_select);
+   	    editor_after_sql.setSize("100%","100%");
+	});
+
+	$("#btn_ok").click(function(){
+		// #################################################################
+		// ## submitRequest
+		// #################################################################
+
+		if(confirm("완료 처리를 하시겠어요? DB반영 완료 후 진행되어야 합니다.") == false) {
+		    return false;
+		}
+
+		req_no = '{{objects.REQ_NO}}'
+		console.log(req_no)
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxExecuteMeta' %}",
+	      data: { 'req_no' : req_no,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      	alert("반영이 완료되었습니다.")
+	      	window.location.href = "{% url 'DBAWorkLV' %}";
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	$('.tabs a').click(function (e) {
+
+        $(this).tab('show');
+        editor_before_sql.refresh()
+        editor_after_sql.refresh()
+
+    });
+
+    $("#modifyDDL").click(function(){
+		// #################################################################
+		// ## submitRequest
+		// #################################################################
+
+
+
+		req_no = '{{objects.REQ_NO}}'
+
+
+
+
+		var e = document.getElementById("id_choice_tab_tbs");
+		var sel_val = e.options[e.selectedIndex].value;
+		choice_tab_tbs = sel_val
+
+		var e = document.getElementById("id_choice_ind_tbs");
+		var sel_val = e.options[e.selectedIndex].value;
+		choice_ind_tbs = sel_val
+
+		var e = document.getElementById("id_choice_owner");
+		var sel_val = e.options[e.selectedIndex].value;
+		choice_owner = sel_val
+
+		var e = document.getElementById("id_choice_role");
+		var sel_val = e.options[e.selectedIndex].value;
+		choice_role = sel_val
+
+
+		console.log(choice_owner)
+		console.log(choice_role)
+		console.log(choice_ind_tbs)
+		console.log(choice_ind_tbs)
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxModifyMeta' %}",
+	      data: { 'req_no' : req_no,
+	      		  'choice_owner' : choice_owner,
+	      		  'choice_role' : choice_role,
+	      		  'choice_tab_tbs' : choice_tab_tbs,
+	      		  'choice_ind_tbs' : choice_ind_tbs,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		// console.log(json.before_sql)
+	      		// console.log(json.after_sql)
+	      		editor_after_sql.setValue(json.after_sql)
+	      		editor_after_sql.refresh()
+
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+
+</script>
+
+{%endblock%}
+
+
+
+
+
+

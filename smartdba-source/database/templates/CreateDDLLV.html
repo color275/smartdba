@@ -1,0 +1,535 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}Smart-자동화{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        .td_fix_center {
+        	white-space: nowrap;
+        	text-align: center;
+        	vertical-align: middle;        	
+        }
+        #datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+		.buttons-excel {
+			background-color: #4CAF50; /* Green */
+			color: white;
+			text-align: center;
+			text-decoration: none;
+			display: inline-block;
+		}
+		div.dt-buttons{
+		position:relative;
+		float:right;
+		}
+    </style>    
+
+    <link rel="stylesheet" href="{% static 'assets/vendor/bootstrap-fileupload/bootstrap-fileupload.min.css' %}" />
+</head>
+
+<header class="page-header">
+	<h2>데이터 모델 / 표준 자동화 TOOL</h2>
+</header>
+
+
+<!-- start: page -->
+<form id="FILE_FORM" method="POST" action="#"  enctype="multipart/form-data">
+
+	{% csrf_token %}	
+
+
+	
+	<div class="panel-body">
+		<div class="tabs">
+			<ul class="nav nav-tabs">				
+				<li class="active">
+					<a href="#erd_check" data-toggle="tab">ERD 표준 검사</a>				
+				</li>
+				<li>
+					<a href="#excel_check" data-toggle="tab">엑셀 표준 검사</a>
+				</li>
+				<li>
+					<a href="#erd_change" data-toggle="tab">논리<->물리 변환</a>
+				</li>
+			</ul>
+			<div class="tab-content">
+				
+				<div id="erd_check" class="tab-pane active">
+				    <div class="form-group">
+				    	<div class="alert alert-info">
+							<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+							1. <strong>초기 논리 모델 구축</strong>과 <strong>용어 표준 체크</strong>를 위한 페이지 입니다<br>
+							2. 논리모델이므로 <strong>DBSchema Tool 를 사용하여 한글명으로 ERD 생성</strong> , 파일 업로드 후 용어 표준을 체크해주세요<br>
+							3. 자세한 설명은 <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=38583782" target="blank" class="alert-link">[도움말]</a> 클릭하세요
+						</div>						
+						<div class="input-group">
+							<div class="fileupload fileupload-new" data-provides="fileupload">
+								<div class="input-append">
+									<div class="uneditable-input">
+										<i class="fa fa-file fileupload-exists"></i>
+										<span class="fileupload-preview"></span>
+									</div>
+									<span class="btn btn-default btn-file">
+										<span class="fileupload-exists">Change</span>
+										<span class="fileupload-new">DBSchema ERD파일 업로드</span>
+										<input type="file" id="file_erd" name="file_erd"/>
+									</span>
+									<a href="#" class="btn btn-default fileupload-exists" data-dismiss="fileupload">Remove</a>		
+									<a id="btn_erd_send" class="btn btn-default">표준검사</a>								
+									<button id="btn_erd_download" class="btn btn-default" type="input" formaction="{% url 'ajaxCreateDDLLVErdDownload' %}" disabled>표준 적용 된 ERD 다운로드</button>
+								</div>
+							</div>
+						</div>
+					</div>										
+				</div>
+				<div id="excel_check" class="tab-pane">
+					<div class="form-inline">
+						<div class="form-group">
+					    	<div class="alert alert-info">
+								<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+								1. <strong>Excel 포맷을 이용</strong>하여 용어 표준 체크를 하기 위한 페이지 입니다.<br>
+								2. <strong>구글시트 입력</strong> 버튼 클릭 후 엑셀 시트에 테이블 메타 정보 입력 후 <strong>시트명을 아래 입력박스에 넣어 표준검사</strong>를 진행하세요. <br>
+								3. 자세한 설명은 <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30117937" target="blank" class="alert-link">[도움말]</a> 클릭하세요
+							</div>	
+							<input class="form-control" id="sheet_name" name="sheet_name" style='width:300px' placeholder="구글시트명 입력">
+						    
+						    <a href="https://docs.google.com/spreadsheets/d/1SDjOVFaM_zGFObbsBSvofFkcHtT51siQxp9LdZtXBQQ/edit#gid=774756178" target="_blank" class="btn btn-default" id="btn_apply" >1. 구글시트 열기</a>			
+							<a id="btn_excel_send" class="btn btn-default">2. 표준검사</a>
+					    </div>
+					</div>
+				</div>
+				<div id="erd_change" class="tab-pane">
+					<div class="form-inline">
+						<div class="form-group">
+					    	<div class="alert alert-info">
+								<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+								1. <strong>논리<->물리 변환</strong>을 위한 페이지 입니다.<br>		
+								2. 자세한 설명은 <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30117937" target="blank" class="alert-link">[도움말]</a> 클릭하세요
+							</div>	
+							<div class="input-group">
+								<div class="fileupload fileupload-new" data-provides="fileupload">
+									<div class="input-append">
+										<div class="uneditable-input">
+											<i class="fa fa-file fileupload-exists"></i>
+											<span class="fileupload-preview"></span>
+										</div>
+										<span class="btn btn-default btn-file">
+											<span class="fileupload-exists">Change</span>
+											<span class="fileupload-new">DBSchema ERD파일 업로드</span>
+											<input type="file" id="file_erd_change" name="file_erd_change"/>
+										</span>
+										<a href="#" class="btn btn-default fileupload-exists" data-dismiss="fileupload">Remove</a>									
+										<button type="submit" id="btn_erd_ptol_download" name="btn_erd_ptol_download" class="btn btn-default" type="input" formaction="{% url 'ajaxCreateDDLLVErdChangeDownload' %}" disabled>물리ERD->논리ERD</button>
+										<button type="submit" id="btn_erd_ltop_download" name="btn_erd_ltop_download" class="btn btn-default" type="input" formaction="{% url 'ajaxCreateDDLLVErdChangeDownload' %}" disabled>논리ERD->물리ERD</button>
+										<!-- <button type="submit" id="btn_html_ptol_download" name="btn_html_ptol_download" class="btn btn-default" type="input" formaction="{% url 'ajaxCreateDDLLVHtmlChangeDownload' %}" disabled>물리HTML->물리/논리HTML</button> -->
+									</div>
+								</div>
+							</div>
+					    </div>
+					</div>
+				</div>
+			</div>
+			{% if messages %}
+			<ul class="messages">
+			    {% for message in messages %}
+			    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+			    {% endfor %}
+			</ul>
+			{% endif %}
+		</div>
+		
+		<div id="err_message"></div>
+
+		<b><h5><font color="blue"><span id="table_count"></span></font></h5></b>
+		<a id="btn_ddl" href="#btn_ddl_modal" class="modal-with-form btn-xs btn btn-default" style="display: none">DDL 추출</a>
+		
+		<div id="btn_ddl_modal" class="modal-block modal-block-lg mfp-hide">
+			<section class="panel">
+				<header class="panel-heading">
+					<h2 class="panel-title">DDL 추출 ( Script 안보일 경우 빈 박스 클릭 )</h2>
+				</header>
+				<div class="panel-body">
+					<div class="modal-wrapper">
+						<textarea class="form-control" id="codemirror_ddl"></textarea>
+					</div>
+				</div>
+				<footer class="panel-footer">
+					<div class="row">
+						<div class="col-md-12 text-right">
+							<button id="btn_meta_alter_all_ddl_close" class="btn btn-default modal-dismiss">닫기</button>
+						</div>
+					</div>
+				</footer>
+			</section>
+		</div>
+		<div id="table_result">
+						
+		</div>
+
+		<!-- <div class="tabs">
+			<ul class="nav nav-tabs">
+				<li class="active">
+					<a href="#dev_work" data-toggle="tab">테이블 상세</a>
+				</li>
+				<li>
+					<a href="#dba_work" data-toggle="tab">DB반영 Script</a>
+				</li>
+			</ul>
+			<div class="tab-content">
+				<div id="dev_work" class="tab-pane active">
+					<div id="table_result">
+						
+					</div>
+				</div>
+				<div id="dba_work" class="tab-pane">												
+					<div id="div_script" style="clear: both;">
+						<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_save_dba_script" name="text_sql" >{{objects.0.ddl}}</textarea></pre>
+					</div>
+				</div>
+			</div>
+		</div> -->
+					
+		
+	</div>		
+	
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-fileupload/bootstrap-fileupload.min.js' %}"></script>
+
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+
+<!-- 엑셀 다운로드 버튼을 우해 추가... 왜 ? -->
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+
+
+
+
+
+<script>
+	let table_layout = '<table class="table table-bordered table-striped mb-none" id="datatable-default">' +
+                		'	<thead>' +
+                		'		<tr>' +
+                		'			' +
+                		'			<th class="td_fix_center">#</th>' +
+                		'			<th class="td_fix_center">컬럼순서</th>' +
+                		'			<th class="td_fix_center">테이블한글명</th>' +
+                		'			<th class="td_fix_center">테이블영문명</th>' +
+                		'			<th class="td_fix_center">컬럼한글명</th>' +
+                		'			<th class="td_fix_center">PK</th>' +
+                		'			<th class="td_fix_center">NotNull여부</th>' +
+                		'			<th class="td_fix_center">Default값</th>' +
+                		'			<th class="td_fix_center">컬럼영문명</th>' +
+                		'			<th class="td_fix_center">데이터타입</th>' +
+                		'			<th class="td_fix_center">도메인</th>' +
+                		'			<th class="td_fix_center">표준여부</th>' +
+                		'			<th class="td_fix_center">hidden</th>' +
+                		'			<th class="td_fix_center">hidden</th>' +
+                		'		</tr>' +
+                		'	</thead>' +
+                		'</table>'
+	let editor_ddl;
+	let localDataTable;
+
+	$("#file_erd").on('change',function(){
+		if ( this.files[0] == undefined )
+		{
+			document.getElementById('btn_erd_download').disabled = true;
+		}
+		else 
+		{
+			name = this.files[0].name
+			fileext = name.slice(name.indexOf(".")+1).toLowerCase();
+
+			if ( fileext != "dbs" )
+			{
+				alert("DBSchema 파일(*.dbs)만 가능합니다.")
+				return;
+			}
+		    document.getElementById('btn_erd_download').disabled = true;
+		    // $("#btn_erd_send").click();
+		}
+
+	    
+	    
+
+	});
+
+	$("#file_erd_change").on('change',function(){	    
+		
+		if ( this.files[0] == undefined )
+		{
+			document.getElementById('btn_erd_ptol_download').disabled = true;
+		    document.getElementById('btn_erd_ltop_download').disabled = true;	
+		    document.getElementById('btn_html_ptol_download').disabled = true;	
+		}
+		else {
+			name = this.files[0].name
+			fileext = name.slice(name.indexOf(".")+1).toLowerCase();
+
+			if ( fileext != "dbs" && fileext != "html" )
+			{
+				alert("DBSchema 파일(*.dbs)만 가능합니다.")
+				return;
+			}
+			if ( fileext == "dbs" )
+			{
+			    document.getElementById('btn_erd_ptol_download').disabled = false;
+			    document.getElementById('btn_erd_ltop_download').disabled = false;				
+			}
+			if ( fileext == "html" )
+			{
+			    document.getElementById('btn_html_ptol_download').disabled = false;
+			}
+		}
+
+	});
+
+	$(document).ready(function() {
+	 
+	  config_select = {
+	  			mode:  "text/x-sql",
+	  			theme: "base16-light",
+	  			smartIndent: true,
+	  			lineWrapping: true,
+	  	    };
+
+	    editor_ddl = CodeMirror.fromTextArea(document.getElementById("codemirror_ddl"), config_select);
+	    editor_ddl.setSize("100%","500px");
+	  
+	});
+
+
+
+	$("#btn_excel_send").click(function(){
+
+		sheet_name = $("#sheet_name").val()
+
+		if ( sheet_name == "" )
+		{
+			alert('구글시트 내 시트 명 입력 후 표준검사를 수행해주세요')
+			return;
+		}
+
+
+        $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxCreateDDLLVExcel' %}",
+	      data: { 'sheet_name' : sheet_name	,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},	      
+		  dataType: "json",		  
+	      success: function(json) {	      	
+
+	      		if ( json['message'] != "") {
+		      		alert(json['message'])
+		      		return;
+	      		}
+                
+                
+                $('#datatable-default').dataTable().fnDestroy();
+                $('#datatable-default').empty() 
+                $("#table_result").html(table_layout)
+                const localDataTable = $('#datatable-default').DataTable({ 
+                			
+                			'rowCallback': function(row, data, index){
+                			    if(data[12] == 1){
+                			        $(row).find('td').css('background-color', '#cccccc');
+                			    }                			    
+                			  },            		    
+				            responsive: true,
+				            // "scrollX": true,
+				            // "scrollY": "800px",
+							// "scrollCollapse": true,
+				            "pageLength": 1000,
+				            // "order": [],					            
+				            "dom":  "<'row'>B<'row'<'col-md-6'><'col-md-6'>>t<'row'<'col-md-4'>><'row'>",
+				            "bFilter": true,
+				            "paging": true,
+				            buttons: [
+	  				                {
+		                                extend: 'excelHtml5',
+		                                filename: 'SmartDBA_표준',
+		                                title: '',
+		                                exportOptions: {
+		                                                    columns: [ 0,1,2,3,4,5,6,7,8,9,10,11 ]
+		                                               }
+		                            },
+	  				            ],
+				            data: json['meta_list'],
+				            "columnDefs": [
+                			             {
+                			                 "targets": [ 12,13 ],
+                			                 "visible": false,
+                			                 "searchable": false
+                			             },                			            
+                			         ],
+
+				});                
+				$("#table_count").html("* 테이블 개수 : " + json['table_cnt'])
+
+	    	    err_message = ''
+	    	    $.each(json['err_message'], function(i, obj) {
+	    	    	err_message = err_message + obj	    	    	
+		        })
+		        $("#err_message").html(err_message)
+
+		        editor_ddl.setValue(json['ddl'])
+		        editor_ddl.refresh()
+
+		        $("#btn_ddl").show()
+
+				
+	      },
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	        alert("업로드한 파일이 변경되었습니다. Remove 클릭 후 다시 업로드해주세요");
+	      },
+	    });
+    })
+
+	$("#btn_erd_send").click(function(){
+		console.log("btn_erd_send");
+		$(".messages").hide()
+
+		let formData = new FormData();
+
+		formData.append('file',$("#file_erd")[0].files[0])
+
+		
+
+        $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxCreateDDLLVErd' %}",
+	      data: formData,
+		  dataType: "json",
+		  beforeSend: function (xhr) {
+		       xhr.setRequestHeader('X-CSRFToken', '{{csrf_token}}');
+		    },
+		  contentType: false,
+		  processData: false,
+	      success: function(json) {	      	
+	      		
+	      		if ( json['message'] != "") {
+		      		alert(json['message'])
+		      		return;
+	      		}
+
+                $('#datatable-default').dataTable().fnDestroy();
+                $('#datatable-default').empty() 
+                $("#table_result").html(table_layout)
+
+                const localDataTable = $('#datatable-default').DataTable({ 
+                			
+                			'rowCallback': function(row, data, index){
+                			    if(data[12] == 1){
+                			        $(row).find('td').css('background-color', '#cccccc');
+                			    }                			    
+                			  },            		    
+				            responsive: true,
+				            // "scrollX": true,
+				            // "scrollY": "800px",
+							// "scrollCollapse": true,
+				            "pageLength": 1000,
+				            // "order": [],					            
+				            "dom":  "<'row'>B<'row'<'col-md-6'><'col-md-6'>>t<'row'<'col-md-4'>><'row'>",
+				            "bFilter": true,
+				            "paging": true,
+				            buttons: [
+	  				                {
+		                                extend: 'excelHtml5',
+		                                filename: 'SmartDBA_표준',
+		                                title: '',
+		                                exportOptions: {
+		                                                    columns: [ 0,1,2,3,4,5,6,7,8,9,10,11 ]
+		                                               }
+		                            },
+	  				            ],
+				            data: json['meta_list'],
+				            "columnDefs": [
+                			             {
+                			                 "targets": [ 12,13 ],
+                			                 "visible": false,
+                			                 "searchable": false
+                			             },                			            
+                			         ],
+
+				});                
+				$("#table_count").html("* 테이블 개수 : " + json['table_cnt'])
+
+				
+
+	    	    err_message = ''
+
+	    	    $.each(json['err_message'], function(i, obj) {
+	    	    	err_message = err_message + obj    	    	
+		        })
+
+		        console.log(json['err_message'].length)
+
+		        if ( json['err_message'].length == 0 ) {
+		        	document.getElementById('btn_erd_download').disabled = false;
+		        	
+		        }
+
+
+		        $("#err_message").html(err_message)
+
+		        editor_ddl.setValue(json['ddl'])
+		        editor_ddl.refresh()
+
+		        $("#btn_ddl").show()
+
+
+	      },
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	        alert("업로드한 파일이 변경되었습니다. Remove 클릭 후 다시 업로드해주세요");
+	      },
+	    });
+    })	
+
+    
+
+
+
+    $('.tabs a').click(function (e) {
+        $(this).tab('show');
+    });
+
+    
+
+    
+
+    
+    
+</script>
+
+
+{%endblock%}
+
+
+
+
+

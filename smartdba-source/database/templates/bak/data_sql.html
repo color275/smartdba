@@ -1,0 +1,91 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+
+
+
+</head>
+
+<header class="page-header">
+	<h2><b>"{{col_comments}}"</b> 결과 데이터</h2>
+
+	
+</header>
+
+
+
+<!-- start: page -->
+<form method="POST" action="{% url 'dataSearchKeyword' %}" >
+	{% csrf_token %}
+
+	<br>
+
+	<section class="panel">
+		{%if search_dataset %}
+			<div class="panel-body">
+				<table class="table table-bordered table-striped mb-none csort" id="datatable-default" data-plugin-options='{"searchPlaceholder": "결과 내 검색"}'>
+					<thead>
+						<tr>
+							{% for header in columnnames %}
+								<th>{{header}}</th>
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						{% for data in search_dataset %}
+							<tr class="gradeX">
+								{% for d in data %}
+									<td>{{d}}</td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		{% endif %}
+
+	</section>
+
+</form>
+
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>		
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>		
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+		
+		
+		
+
+
+<script>
+	$('#datatable-default').DataTable({
+            responsive: true,
+            "order": []
+
+        });
+</script>
+
+
+
+{%endblock%}
+
+
+
+
+
+

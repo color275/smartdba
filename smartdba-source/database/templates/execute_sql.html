@@ -1,0 +1,1588 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+<head>
+
+	<script type="text/javascript">
+	function check(){
+
+	var str = document.getElementById('personName');
+
+
+
+	if( str.value == '' || str.value == null ){
+	    alert( '값을 입력해주세요' );
+	    return false;
+	}
+
+	var blank_pattern = /^\s+|\s+$/g;
+	if( str.value.replace( blank_pattern, '' ) == "" ){
+	    alert(' 공백만 입력되었습니다 ');
+	    return false;
+	}
+
+
+
+	//공백 금지
+	//var blank_pattern = /^\s+|\s+$/g;(/\s/g
+	var blank_pattern = /[\s]/g;
+	if( blank_pattern.test( str.value) == true){
+	    alert(' 공백은 사용할 수 없습니다. ');
+	    return false;
+	}
+
+
+	var special_pattern = /[`~!@#$%^&*|\\\'\";:\/?]/gi;
+
+	if( special_pattern.test(str.value) == true ){
+	    alert('특수문자는 사용할 수 없습니다.');
+	    return false;
+	}
+
+	alert( '최종 : ' + str.value );
+
+	/*
+	if( str.value.search(/\W|\s/g) > -1 ){
+	    alert( '특수문자 또는 공백을 입력할 수 없습니다.' );
+	    str.focus();
+	    return false;
+	}*/
+
+	}
+	</script>
+
+
+
+
+	<style type="text/css" >
+
+		.overlay {
+		  display: none;
+		  z-index: 1000;
+		  position: fixed;
+		  width: 100%; height: 100%;
+		  left: 0; top: 0;
+		  background-color: rgba(0,0,0, 0.4);
+		  overflow-x: hidden;
+		}
+
+		.wrap-loading{ /*화면 전체를 어둡게 합니다.*/
+		    position: fixed;
+		    left:0;
+		    right:0;
+		    top:0;
+		    bottom:0;
+		    background: rgba(0,0,0,0.2); /*not in ie */
+		    filter: progid:DXImageTransform.Microsoft.Gradient(startColorstr='#20000000', endColorstr='#20000000');    /* ie */
+
+		}
+
+	    .wrap-loading div{ /*로딩 이미지*/
+	        position: fixed;
+	        top:50%;
+	        left:50%;
+	        margin-left: -21px;
+	        margin-top: -21px;
+	    }
+
+    	.wrap-help{ /*화면 전체를 어둡게 합니다.*/
+    	    position: fixed;
+    	    left:0;
+    	    right:0;
+    	    top:0;
+    	    bottom:0;
+    	    background: rgba(0,0,0,0.8); /*not in ie */
+    	    filter: progid:DXImageTransform.Microsoft.Gradient(startColorstr='#20000000', endColorstr='#20000000');    /* ie */
+
+    	}
+
+        .wrap-help div{ /*로딩 이미지*/
+            position: fixed;
+            top:50%;
+            left:50%;
+            margin-left: -21px;
+            margin-top: -21px;
+        }
+
+	    .display-none{ /*감추기*/
+	        display:none;
+	    }
+
+	    .sql_history_table {
+	    	/*border: 1px solid #444444;	    	*/
+			padding: 0px;
+			width: 100%;
+			height: 250px;
+
+	    }
+	    /*.sql_history_table tr td {
+	    	border: 1px solid #444444;
+	    }*/
+
+	  /*  .CodeMirror {
+			font-family: Arial, monospace;
+			font-size: 12px;
+		}*/
+		#tab-list .close{
+			margin-left: 7px;
+		}
+	</style>
+
+</head>
+
+
+
+
+<header class="page-header">
+	<h2><span id="sql_title">데이터허브DB에서 SQL 실행</span></h2>
+</header>
+
+<div class="overlay"></div>
+<div class="col-md-12">
+		<section class="panel">
+				<div id ="sql_id" style ="display:none">{{sql_id}}</div>
+				<div id ="avg_t" style ="display:none">{{avg_t}}</div>
+				<div class="table-responsive" id="sql_editor_text">
+				    <div class="row">
+
+				        <div class="col-md-12">
+
+				            <button id="btn-add-tab" type="button" class="mb-xs mt-xs mr-xs btn btn-sm btn-warning pull-right" data-toggle="tooltip" data-placement="left" title="SQL 작성하는 탭을 추가합니다"><i class="fa fa-plus-square"></i> TAB추가</button>
+				            <!-- Nav tabs -->
+				            <ul id="tab-list" class="nav nav-tabs" role="tablist">
+				                <li class="active"><a href="#tab0" role="tab" id="0" data-toggle="tab" class="sqltab">SQL 1</a></li>
+				            </ul>
+
+				            <!-- Tab panes -->
+				            <div id="tab-content" class="tab-content">
+				                <div class="tab-pane fade in active" id="tab0">
+				                	<pre><textarea class="text_sql form-control" id="codemirror_sql_code0" name="text_sql">{{sql_text}}</textarea></pre>
+				                </div>
+				            </div>
+				        </div>
+				    </div>
+				</div>
+
+
+
+				<div class="text-right">
+					<div class="pull-left">
+					<code><span id="txt_error">SBC 접속 없이 데이터를 조회해 볼 수 있어요</span></code>
+					</div>
+					<a id="btn_clear" class="mb-xs mt-xs mr-xs btn btn-sm modal-basic btn-default" href="#btn_clear_modal"> <i class="fa fa-refresh"></i> Clear</a>
+					<div id="btn_clear_modal" class="modal-block modal-block-primary mfp-hide">
+						<section class="panel">
+							<header class="panel-heading">
+								<h2 class="panel-title">확인해 주세요?</h2>
+							</header>
+							<div class="panel-body">
+								<div class="modal-wrapper">
+									<div class="modal-icon">
+										<i class="fa fa-question-circle"></i>
+									</div>
+									<div class="modal-text">
+										<h4></h4>
+										<p>정말 SQL편집기 내용을 지우시겠어요?</p>
+									</div>
+								</div>
+							</div>
+							<footer class="panel-footer">
+								<div class="row">
+									<div class="col-md-12 text-right">
+										<button id="btn_clear_ok" type="button" class="btn btn-primary modal-confirm">Confirm</button>
+										<button class="btn btn-default modal-dismiss">Cancel</button>
+									</div>
+								</div>
+							</footer>
+						</section>
+					</div>
+
+					<a id="btn_sql_save" class="modal-with-form btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-default" href="#btn_sql_save_modal"><i class="fa fa-download"></i> 저장</a>
+					<!-- Modal Form -->
+					<div id="btn_sql_save_modal" class="modal-block modal-block-primary mfp-hide">
+						<section class="panel">
+							<header class="panel-heading">
+								<h2 class="panel-title">확인해 주세요?</h2>
+							</header>
+							<div class="panel-body">
+								<form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate">
+									<div class="form-group mt-lg">
+										<label class="col-sm-3 control-label">저장할 이름 <span class="required">(*)</span></label>
+										<div class="col-sm-9">
+											<input type="text" id="txt_sql_save_name" name="txt_sql_save_name" class="form-control" placeholder="Type your name..." required/>
+										</div>
+									</div>
+									<div class="form-group mt-lg">
+										<label class="col-sm-3 control-label">DB선택 <span class="required">(*)</span></label>
+										<div class="col-sm-9">
+											<select class="form-control" id="select_db" name="select_db">
+												{% for upper_domain, db_list in db_dict.items %}
+													<optgroup label="=== {{upper_domain}} ===">
+														{% for db in db_list %}
+															{% if select_db %}
+																{% if db.1 in select_db %}
+																	<option selected value="{{db.1}}">{{db.0}}</option>
+																{% else %}
+																	<option value="{{db.1}}">{{db.0}}</option>
+																{% endif %}
+															{% else %}
+																{% if db.0 == '데이터허브' %}
+																	<option selected value="{{db.1}}">{{db.0}}</option>
+																{% else %}
+																	<option value="{{db.1}}">{{db.0}}</option>
+																{% endif %}
+															{% endif %}
+
+														{% endfor %}
+													</optgroup>
+												{% endfor %}
+											</select>
+										</div>
+									</div>
+									<div class="form-group mt-lg">
+										<label class="col-sm-3 control-label">업무선택 <span class="required">(*)</span></label>
+										<div class="col-sm-9">
+											<select class="form-control" id="select_domain" name="select_column_type">
+												{% for list in data_domain_list %}
+													<option value={{list.ID}}>{{list.DOMAIN_NAME}}</option>
+												{% endfor %}
+											</select>
+										</div>
+									</div>
+									<div class="form-group">
+										<label class="col-sm-3 control-label">설명</label>
+										<div class="col-sm-9">
+											<textarea rows="5" class="form-control" id = "txt_sql_save_explain" name = "txt_sql_save_explain" placeholder="Type your comment..." ></textarea>
+										</div>
+									</div>
+								</form>
+							</div>
+							<footer class="panel-footer">
+								<div class="row">
+									<div class="col-md-12 text-right">
+										<button id="btn_sql_save_name_ok" type="button" class="btn btn-primary">Submit</button>
+										<button id="btn_sql_save_name_cancel" class="btn btn-default modal-dismiss">Cancel</button>
+									</div>
+								</div>
+							</footer>
+						</section>
+					</div>
+
+					<button id="btn_sql" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-primary"> <i class="fa fa-youtube-play"></i> SQL 실행 (Ctrl+Enter)</button>
+
+				</div>
+		</section>
+
+
+		<div id="tabs_view" class="col-md-13">
+			<div class="tabs">
+				<ul id="tab-list-result" class="nav nav-tabs">
+					<li class="active">
+						<a href="#sql_history" data-toggle="tab"><i class="fa fa-star"></i> SQL 이력</a>
+					</li>
+					<li>
+						<a href="#sql_result0" data-toggle="tab" id="0" class="sqlresulttab">SQL 1 결과</a>
+					</li>
+				</ul>
+				<div id="tab-content-result" class="tab-content">
+					<div id="sql_history" class="tab-pane active">
+							<table class="sql_history_table" style="width: 100%; height: 200px; padding: 0px" border=0>
+								<tr style="height: 1px">
+									<td style="width: 32%;">
+										<div class="h5 mb-xs text-semibold" ><i class="fa fa-list"></i> 저장된 데이터&nbsp;&nbsp;<!-- (★공유됨) -->
+										</div>
+									</td>
+									<td rowspan="3" style="width: 1%;">
+									</td>
+									<td style="width: 35%;">
+										<div class="h5 mb-xs text-semibold" ><i class="fa  fa-toggle-down"></i>
+											SQL 미리보기
+										</div>
+									</td>
+									<td rowspan="3" style="width: 1%;">
+									</td>
+									<td>
+										<div class="h5 mb-xs text-semibold" ><i class="fa fa-check"></i> 상세 설명</div>
+									</td>
+								</tr>
+								<tr style="height: *">
+									<td style="vertical-align: top; padding: 0px">
+
+										<select id="select_sql_title" name="select_sql_title" multiple="" style="height: 150px" class="form-control" onchange="f_click_selectbox(this)" >
+											<!-- <option value="Choose here" selected disabled>Choose here</option> -->
+											{% for k, v in sql_title_dict.items %}
+												<optgroup label="{{k}}">
+													{% for id, data_title in v %}
+														<option value="{{id}}">{{data_title}}</option>
+													{% endfor %}
+												</optgroup>
+											{% endfor %}
+										</select>
+										<br>
+										<button id="btn_load" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-default"> <i class="fa fa-upload" ></i> 불러오기</button>
+
+										<button id="btn_delete" type="button" class="btn_sql mb-xs mt-xs mr-xs btn modal-basic btn-sm btn-default" href="#btn_delete_modal"> <i class="fa fa-times" ></i> 삭제
+										</button>
+										<!-- <a id="btn_clear" class="mb-xs mt-xs mr-xs btn btn-sm modal-basic btn-default" href="#btn_clear_modal"> <i class="fa fa-refresh"></i> Clear</a> -->
+										<div id="btn_delete_modal" class="modal-block modal-block-primary mfp-hide">
+											<section class="panel">
+												<header class="panel-heading">
+													<h2 class="panel-title">확인해 주세요?</h2>
+												</header>
+												<div class="panel-body">
+													<div class="modal-wrapper">
+														<div class="modal-icon">
+															<i class="fa fa-question-circle"></i>
+														</div>
+														<div class="modal-text">
+															<h4></h4>
+															<p>선택된 SQL을 정말 지우시겠습니까?</p>
+														</div>
+													</div>
+												</div>
+												<footer class="panel-footer">
+													<div class="row">
+														<div class="col-md-12 text-right">
+															<button id="btn_delete_ok" type="button" class="btn btn-primary modal-confirm">Confirm</button>
+															<button class="btn btn-default modal-dismiss">Cancel</button>
+														</div>
+													</div>
+												</footer>
+											</section>
+										</div>
+
+										<button id="btn_share" class="mb-xs mt-xs mr-xs modal-basic btn btn-sm btn-default" href="#btn_share_modal" style="display: none"> <i class="fa fa-share-alt" ></i> <span id="span_btn_share">동료와 공유</span></button>
+										<div id="btn_share_modal" class="modal-block modal-block-primary mfp-hide">
+											<section class="panel">
+												<header class="panel-heading">
+													<h2 class="panel-title">확인해 주세요?</h2>
+												</header>
+												<div class="panel-body">
+													<div class="modal-wrapper">
+														<div class="modal-icon">
+															<i class="fa fa-question-circle"></i>
+														</div>
+														<div class="modal-text">
+															<h4></h4>
+															<p><span id="span_modal_share"></span></p>
+														</div>
+													</div>
+												</div>
+												<footer class="panel-footer">
+													<div class="row">
+														<div class="col-md-12 text-right">
+															<button id="btn_share_ok" type="button" class="btn btn-primary">Confirm</button>
+															<button id="btn_share_cancel" class="btn btn-default modal-dismiss">Cancel</button>
+														</div>
+													</div>
+												</footer>
+											</section>
+										</div>
+
+
+
+										<button id="btn_tuning" class="mb-xs mt-xs mr-xs modal-basic btn btn-sm btn-default" href="#btn_tuning_modal"> <i class="fa fa-rocket" ></i> <span id="span_btn_tuning">속도개선 요청</span></button>
+										<div id="btn_tuning_modal" class="modal-block modal-block-primary mfp-hide">
+											<section class="panel">
+												<header class="panel-heading">
+													<h2 class="panel-title">확인해 주세요?</h2>
+												</header>
+												<div class="panel-body">
+													<form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate">
+														{%csrf_token%}
+														<div class="form-group mt-lg">
+															<label class="col-sm-3 control-label">제목 <span class="required">(*)</span></label>
+															<div class="col-sm-9">
+																<input type="text" id="txt_tuning_title" name="txt_tuning_title" class="form-control" placeholder="Type your comment..." required/>
+															</div>
+														</div>
+														<div class="form-group mt-lg">
+															<label class="col-sm-3 control-label">현재 응답시간 <span class="required">(*)</span></label>
+															<div class="col-sm-9">
+																<input type="text" id="txt_tuning_asis_time" name="txt_tuning_asis_time" class="form-control" placeholder="10분 이상" required/>
+															</div>
+														</div>
+														<div class="form-group mt-lg">
+															<label class="col-sm-3 control-label">기대 응답시간 <span class="required">(*)</span></label>
+															<div class="col-sm-9">
+																<input type="text" id="txt_tuning_tobe_time" name="txt_tuning_tobe_time" class="form-control" placeholder="30초" required/>
+															</div>
+														</div>
+														<div class="form-group">
+															<label class="col-sm-3 control-label">요청 내용</label>
+															<div class="col-sm-9">
+																<textarea rows="5" class="form-control" id = "txt_tuning_explain" name = "txt_tuning_explain" placeholder="Type your comment..." ></textarea>
+															</div>
+														</div>
+													</form>
+												</div>
+												<footer class="panel-footer">
+													<div class="row">
+														<div class="col-md-12 text-right">
+															<button id="btn_tuning_ok"  type="button" class="btn btn-primary">Submit</button>
+															<button id="btn_tuning_cancel" class="btn btn-default modal-dismiss">Cancel</button>
+														</div>
+													</div>
+												</footer>
+											</section>
+										</div>
+									</td>
+									<td style="vertical-align: top;padding: 0px;">
+									 	<div>
+											<!-- <pre style="max-height: 220px"><textarea class="text_sql form-control" id="codemirror_sql_code" name="text_sql" ></textarea></pre>							 -->
+											<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control" style="height: 100%" id="codemirror_sql_code" name="text_sql" ></textarea></pre>
+										</div>
+
+									</td>
+									<td style="width: *; vertical-align: top;">
+										<table border=0 style="width: 100%;" id="table_sql_explain">
+											<tr style="vertical-align: top;">
+												<td style="width: 25%"><b><i class="fa fa-angle-right"></i> 제목 : </b></td>
+												<td style="width: 75%"><span id="data_title"></span>
+																	   <span id="data_id"></span>
+												</td>
+											</tr>
+											<tr style="vertical-align: top;">
+												<td><b><i class="fa fa-angle-right"></i> 평균 조회시간 : </b></td>
+												<td><span id="data_time"></span></td>
+											</tr>
+											<tr style="vertical-align: top;">
+												<td><b><i class="fa fa-angle-right"></i> 설명 : </b></td>
+												<td><span id="data_explain"></span></td>
+											</tr>
+											<tr>
+												<td><b><i class="fa fa-angle-right"></i> 생성일 : </b></td>
+												<td><span id="reg_dtm"></span></td>
+											</tr>
+											<tr>
+												<td><b><i class="fa fa-angle-right"></i> 수정일 : </b></td>
+												<td><span id="mod_dtm"></span></td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+
+							</table>
+					</div>
+
+					<div id="sql_result0" class="tab-pane">
+						<div id="tableDiv0" >
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+
+
+
+
+
+		<div class="wrap-loading display-none">
+			    <div><button id="btn_ajax_cancel" type="button">
+			    	<font color="red" size="5"><span id="output1">0</span>초</font>
+			    	<br><span id="output2"></span>
+			    	<br>(취소는 로딩 바 클릭)
+			    	<img src="{% static 'custom/img/ajax-loader2.gif' %}" style="width: 80%" /></button></div>
+		</div>
+
+		<input type="hidden" id="username" name="username" value="{{request.user.id}}">
+
+
+		<!-- <img src="{% static 'custom/img/help_execute_sql1.png' %}" id="help_execute_sql1" style="position: absolute;left: 200px; top: 70px; z-index:10000; display:none" >
+		<img src="{% static 'custom/img/help_execute_sql2.png' %}" id="help_execute_sql2" style="position: absolute;left: 300px; top: 550px; z-index:10000; display:none" >
+		<img src="{% static 'custom/img/help_execute_sql3.png' %}" id="help_execute_sql3" style="position: absolute;left: 1300px; top: 50px; z-index:10000; display:none" >
+		<img src="{% static 'custom/img/help_execute_sql4.png' %}" id="help_execute_sql4" style="position: absolute;left: 1200px; top: 420px; z-index:10000; display:none" >
+		<a href="#" onclick="click_close();">
+			<img src="{% static 'custom/img/help_close.png' %}" id="help_close" style="position: absolute;left: 1300px; top: 700px; z-index:10000; display: none;">
+		</a> -->
+
+
+
+
+
+</div>
+
+<!-- <script type="text/javascript">
+	window.onload = function () {
+		if(getCookie("close_execute_sql")=="Y"){
+			$("#help_execute_sql1").hide();
+			$("#help_execute_sql2").hide();
+			$("#help_execute_sql3").hide();
+			$("#help_execute_sql4").hide();
+			$("#help_close").hide();
+		}
+		else {
+			$("#help_execute_sql1").show();
+			$("#help_execute_sql2").show();
+			$("#help_execute_sql3").show();
+			$("#help_execute_sql4").show();
+			$("#help_close").show();
+			$(".overlay").show();
+		}
+
+		var d = document.getElementById('help_execute_sql3');
+
+		d.style.left = document.querySelector('#btn-add-tab').getBoundingClientRect().left-450+'px';
+		d.style.top = document.querySelector('#btn-add-tab').getBoundingClientRect().top-100+'px';
+
+		var d = document.getElementById('help_execute_sql4');
+
+		d.style.left = document.querySelector('#btn_sql').getBoundingClientRect().left-450+'px';
+		d.style.top = document.querySelector('#btn_sql').getBoundingClientRect().top-100+'px';
+	}
+
+	function click_question(){
+	    // $('.help_img').removeClass('display-none');
+	    $("#help_execute_sql1").show();
+	    $("#help_execute_sql2").show();
+	    $("#help_execute_sql3").show();
+	    $("#help_execute_sql4").show();
+	    $("#help_close").show();
+	    $(".overlay").show();
+	}
+
+	function click_close(){
+		$("#help_execute_sql1").hide();
+		$("#help_execute_sql2").hide();
+		$("#help_execute_sql3").hide();
+		$("#help_execute_sql4").hide();;
+		$(".overlay").hide();
+		setCookie('close_execute_sql','Y', 31);
+	}
+</script> -->
+
+
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<!-- <script src="{% static 'custom/js/cookie.js' %}"></script> -->
+
+
+
+
+
+
+<script type="text/javascript">
+		// #################################################################
+		// ## First Loading
+		// ## ajaxExecuteSQL
+		// #################################################################
+
+		// 저장된 SQL 상세 에디터
+		let editor_select;
+		let listSQLInfo_title = {};
+		let listSQLInfo_hidden = {};
+		let listSQLInfo_explain = {};
+		let listSQLInfo_avgtime = {};
+		let listSQLInfo_sqlid = {};
+		let listSQLEditorTabs = {};
+		let listSQLResultTabs = {};
+		let listSQLError = {};
+		let schemaDataTable = {};
+		let xhr;
+
+
+
+		$(document).ready(function(e) {
+
+
+
+			var config, editor, editor3;
+
+
+
+
+
+		    config = {
+		        lineNumbers:false,
+				mode:  "text/x-sql",
+				theme: "base16-light",
+				smartIndent: true,
+				lineWrapping: true,
+		    };
+			// text_sql
+		    editor = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_code0"), config);
+		    width_size = 250;
+		    editor.setSize("100%",width_size);
+
+
+
+
+
+		    listSQLEditorTabs[0] = editor;
+		    listSQLResultTabs[0] = $("#tableDiv0")
+		    listSQLInfo_title[0] = document.getElementById("sql_title").textContent;
+		    listSQLInfo_avgtime[0] = document.getElementById("data_time").textContent;
+		    listSQLInfo_sqlid[0] = document.getElementById("sql_id").textContent;
+		    listSQLInfo_avgtime[0] = document.getElementById("avg_t").textContent;
+
+
+
+
+
+
+
+
+
+		    config_select = {
+		        lineNumbers:false,
+				mode:  "text/x-sql",
+				theme: "base16-light",
+				smartIndent: true,
+				lineWrapping: true,
+		    };
+
+		    editor_select = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_code"), config_select);
+
+		    editor_select.setSize("100%",130);
+
+
+
+		    var isCtrl, isAlt;  // ctrl. Alt 눌림 여부 확인
+
+		    document.onkeyup = function(e) {
+		        if (e.which == 17)  isCtrl = false;
+		        if (e.which == 18)  isAlt = false;
+
+		    }
+
+		    document.onkeydown = function(e) {
+		        if (e.which == 17)  isCtrl = true;
+		        if (e.which == 18)  isAlt = true;
+
+		        // console.log(e.which , isCtrl, isAlt)
+		        if (e.which == 13 && isCtrl == true) {  // Ctrl + Alt + c
+
+		        	$("#btn_sql").click();
+		    		return false;
+		       }
+		    }
+
+
+
+
+
+
+			var tabID = 0;
+			var tabText = 1;
+            $('#btn-add-tab').click(function () {
+                tabID++;
+                tabText++;
+
+                $('#tab-list').append($('<li><a href="#tab' + tabID + '" role="tab" id="' + tabID + '"  data-toggle="tab" class="sqltab">SQL ' + tabText + '<button class="close" type="button" title="Remove this page">x</button></a></li>'));
+                $('#tab-content').append($('<div class="tab-pane " id="tab' + tabID + '"> <pre><textarea class="text_sql form-control" id="codemirror_sql_code' + tabID + '" name="text_sql"></textarea></pre></div>'));
+
+                $('#tab-list-result').append($('<li><a href="#sql_result' + tabID + '" role="tab" id="' + tabID + '"  data-toggle="tab" class="sqlresulttab">SQL ' + tabText + ' 결과</a></li>'));
+                $('#tab-content-result').append($('<div class="tab-pane " id="sql_result' + tabID + '"> <div id="tableDiv' + tabID + '" ></div></div>'));
+
+
+                // <div id="tab-content" class="tab-content">
+                //     <div class="tab-pane fade in active" id="tab0">
+                //     	<pre><textarea class="text_sql form-control" id="codemirror_sql_code0" name="text_sql"></textarea></pre>
+                //     </div>
+                // </div>
+
+                editor = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_code"+tabID), config);
+			    editor.setSize("100%",width_size);
+
+
+
+
+			    listSQLEditorTabs[tabID] = editor;
+			    listSQLResultTabs[tabID] = $("#tableDiv"+tabID)
+			    listSQLError[tabID] = ''
+			    listSQLInfo_title[tabID] = '새로운SQL작성'
+			    listSQLInfo_hidden[tabID] = ''
+			    listSQLInfo_explain[tabID] = ''
+			    listSQLInfo_avgtime[tabID] = ''
+			    listSQLInfo_sqlid[tabID] = ''
+
+			    $("#sql_title").html(listSQLInfo_title[tabID]);
+			    $("#txt_error").html(listSQLError[tabID]);
+
+
+			    $('#tab-list a[href="#tab'+tabID+'"]').tab('show');
+			    // $('#tab-list-result a[href="#sql_result'+tabID+'"]').tab('show');
+			    $('#tab-list-result a[href="#sql_history"]').tab('show');
+
+            });
+
+              $("#btn_load").click(function(){
+
+
+              	// 선택된 탭
+              	var tabFirst = $('#tab-list .active a');
+              	var currId = tabFirst.attr("id");
+
+              	listSQLEditorTabs[currId].setValue(editor_select.getValue());
+
+
+              	var sel = document.getElementById("select_sql_title");
+            	var val = sel.options[sel.selectedIndex].text;
+
+            	listSQLInfo_title[currId] = val;
+            	listSQLInfo_hidden[currId] = document.getElementById("data_title").textContent;
+            	listSQLInfo_explain[currId] = document.getElementById("data_explain").textContent;
+            	listSQLInfo_avgtime[currId] = document.getElementById("data_time").textContent;
+            	listSQLInfo_sqlid[currId] = document.getElementById("data_id").textContent;
+            	$("#sql_title").html(val);
+
+
+            	window.scrollBy(0, -100);
+
+              })
+            $('#tab-list').on('click','.sqltab',function(){
+            	var tabID2 = $(this).attr('id');
+            	$('#tab-list-result a[href="#sql_result'+tabID2+'"]').tab('show');
+            	$("#sql_title").html(listSQLInfo_title[tabID2]);
+            	$("#txt_error").html(listSQLError[tabID2]);
+            });
+            $('#tab-list-result').on('click','.sqlresulttab',function(){
+            	var tabID2 = $(this).attr('id');
+            	$('#tab-list a[href="#tab'+tabID2	+'"]').tab('show');
+            	$("#sql_title").html(listSQLInfo_title[tabID2]);
+            });
+
+            $('#tab-list').on('click','.close',function(){
+                var tabID = $(this).parents('a').attr('href');
+                // 삭제 선택된 창
+                var tabID2 = $(this).parents('a').attr('id');
+
+                // 현재 열려있는 창
+                var tabFirst = $('#tab-list .active a');
+                var currId = tabFirst.attr("id");
+
+
+
+                $(this).parents('li').remove();
+                $(tabID).remove();
+                $("#"+tabID2).parents('li').remove();
+                $("#sql_result"+tabID2).remove();
+
+
+                // 현재 열려 있는 창과 선택된 창이 같을 경우
+                if ( currId === tabID2)
+                {
+                	//display first tab
+                	var tabFirst = $('#tab-list a:last');
+                	tabFirst.tab('show');
+
+                	var tabFirst = $('#tab-list-result a:last');
+                	tabFirst.tab('show');
+                }
+                else
+                {
+                	//display first tab
+                	var tabFirst = $('#tab-list a:current');
+                	tabFirst.tab('show');
+
+                	var tabFirst = $('#tab-list-result a:current');
+                	tabFirst.tab('show');
+                }
+
+
+
+
+
+
+            });
+
+			var list = document.getElementById("tab-list");
+
+			document.getElementById('table_sql_explain').style.visibility = "hidden";
+			document.getElementById('data_id').style.display = "none";
+
+
+			document.getElementById('btn_share').disabled = true;
+			document.getElementById('btn_load').disabled = true;
+			document.getElementById('btn_delete').disabled = true;
+			document.getElementById('btn_tuning').disabled = true;
+
+			// if(getCookie("close_executesql")!="Y"){
+			// 	$('.wrap-help').removeClass('display-none');
+			// }
+
+
+
+
+
+
+
+
+			// 화면 진입 시 첫번째 실행
+		  	sql = listSQLEditorTabs[0].getValue();
+		  	sql_id = listSQLInfo_sqlid[0];
+
+		  	var $output = $("#output");
+		  	$output.text(0);
+
+
+
+
+
+		  	if ( sql ) {
+
+			  	elasedTime();
+
+		  		$('#tab-list-result a[href="#sql_result"]').tab('show');
+
+
+			    xhr = $.ajax({
+			      type: "POST",
+			      url: "{% url 'ajaxExecuteSQL' %}",
+			      data: { 'sql':sql,
+			              'sql_id':sql_id,
+			              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+			      dataType: "json",
+			      "success": function(json) {
+
+
+		                    var tableHeaders='';
+		                    $.each(json.columns, function(i, val){
+		                        tableHeaders += "<th>" + val + "</th>";
+		                    });
+
+							
+
+
+		                    listSQLResultTabs[0].empty();
+
+
+		                    listSQLResultTabs[0].append('<table width="100%" style="white-space: nowrap;" id="datatable-default0" class="table table-bordered table-striped mb-none csort" ><thead><tr>' + tableHeaders + '</tr></thead></table>');
+
+
+
+		                    const localDataTable = $('#datatable-default0').DataTable({
+					            responsive: true,
+					            "scrollX": true,
+					            // "scrollY": "200px",
+								"scrollCollapse": true,
+					            "pageLength": 10,
+					            "order": [],
+					            "bFilter": true,
+					            "paging": true,
+					            data: json['data']
+
+					        });
+					        schemaDataTable[0] = localDataTable;
+
+
+					        $('#tab-list-result a[href="#sql_result0"]').tab('show');
+					        schemaDataTable[0].columns.adjust().draw();
+
+
+					        listSQLError[0] = "[성공] 조회시간 : " + json['time'].toFixed(3) + " (초)";
+					        $("#txt_error").html(listSQLError[0]);
+
+					        clearInterval(repeat);
+		                },
+		        beforeSend:function(){
+					        $('.wrap-loading').removeClass('display-none');
+					    },
+			    complete:function(){
+			        $('.wrap-loading').addClass('display-none');
+			    },
+		      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+
+		      	clearInterval(repeat);
+
+
+		      	if (xhr.statusText == 'abort') {
+		            return;
+		        }
+		        else {
+		        	var msg = request.responseText;
+		        	if( msg.indexOf("ORA-") != -1 ){
+		        		var start = msg.indexOf("ORA-");
+		        		var end = msg.indexOf("Request Method");
+		        		var exp_msg = msg.substr(start,end-start);
+		        		listSQLError[0] = "[오류] " + exp_msg;
+		        		$("#txt_error").html(listSQLError[0]);
+		        	}
+		        }
+		      },
+		    });
+		}
+
+
+
+});
+</script>
+
+<script>
+	function f_click_selectbox(e) {
+
+		document.getElementById('table_sql_explain').style.visibility = "visible";
+
+		document.getElementById('btn_load').disabled = false;
+
+
+		var btn_share = document.getElementById('btn_share');
+
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxShowClickedSQL' %}",
+	      data: { 'sql_id':e.value, 'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	                $("#reg_dtm").html(json.data.reg_dtm);
+	                $("#mod_dtm").html(json.data.mod_dtm);
+	                $("#data_explain").html(json.data.data_explain);
+	                $("#data_time").html(json.data.t);
+	                $("#data_title").html(json.data.data_title);
+	                $("#data_id").html(json.data.id);
+
+	                editor_select.setValue(json.data.sql_text);
+
+	                var username = document.getElementById('username').value;
+
+	                if ( json.data.id_mod_user == username )
+	                {
+	                	document.getElementById('btn_share').disabled = false;
+	                	document.getElementById('btn_delete').disabled = false;
+	                	document.getElementById('btn_tuning').disabled = false;
+
+	                	if ( json.data.tuning_status == 1)
+	                	{
+	                		$("#span_btn_tuning").html("속도개선 요청 중")
+	                		document.getElementById('btn_tuning').disabled = true;
+	                	}
+	                	else
+	                	{
+	                		$("#span_btn_tuning").html("속도개선 요청")
+	                		document.getElementById('btn_tuning').disabled = false;
+	                	}
+
+	                }
+	                else
+	                {
+	                	document.getElementById('btn_share').disabled = true;
+	                	document.getElementById('btn_delete').disabled = true;
+	                	document.getElementById('btn_tuning').disabled = true;
+	                }
+
+	                if ( json.data.exp_yn == '1')
+	                {
+	                	// btn_share.disabled = true;
+	                	$("#span_btn_share").html("공유 해제");
+	                	$("#span_modal_share").html("정말 공유를 해제하시겠습니까?")
+	                }
+	                if ( json.data.exp_yn == '0')
+	                {
+	                	// btn_share.disabled = true;
+	                	$("#span_btn_share").html("동료와 공유");
+	                	$("#span_modal_share").html("동료와 SQL을 공유하시겠습니까?")
+	                }
+	                // console.log(json.data.tuning_status);
+
+	      },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	        alert("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);
+	      },
+	    });
+	}
+</script>
+
+
+<script type="text/javascript">
+
+ // #################################################################
+ // ## Button Click
+ // #################################################################
+
+
+
+  $("#btn_sql_save").click(function(){
+  	// 현재 열려있는 창
+  	var tabFirst = $('#tab-list .active a');
+  	var currId = tabFirst.attr("id");
+
+  	if (listSQLInfo_hidden[currId] == undefined) {
+  		document.getElementById("txt_sql_save_name").value = "" ;
+  		document.getElementById("txt_sql_save_explain").value = "" ;
+	  }
+	 else {
+	  	document.getElementById("txt_sql_save_name").value = listSQLInfo_hidden[currId] ;
+	  	document.getElementById("txt_sql_save_explain").value = listSQLInfo_explain[currId] ;
+	 }
+
+ //  	if ( document.getElementById("sql_title").textContent != "" )
+ //  	{
+	//   	document.getElementById("txt_sql_save_explain").value = document.getElementById("data_explain").textContent ;
+	// }
+  })
+
+  $("#btn_clear_ok").click(function(){
+  	// 현재 열려있는 창
+  	var tabFirst = $('#tab-list .active a');
+  	var currId = tabFirst.attr("id");
+
+  	listSQLEditorTabs[currId].setValue('');
+  })
+
+  $("#btn_delete_ok").click(function(){
+  	var sel = document.getElementById("select_sql_title");
+	var sql_id = sel.options[sel.selectedIndex].value;
+
+
+
+
+    $.ajax({
+      type: "POST",
+      url: "{% url 'ajaxDeleteSQL' %}",
+      data: { 'sql_id':sql_id,
+              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+      dataType: "json",
+      "success": function(json) {
+
+                    $('#select_sql_title').empty();
+
+				    var optgroup = "";
+				    var ind = 0;
+
+				    for ( k in json['data_list'] ) {
+				        var optgroup = optgroup +  "<optgroup label='"+k+"'>";
+
+				        for( v in json['data_list'][k] ) {
+				            name = json['data_list'][k][v][1];
+				            id = json['data_list'][k][v][0];
+
+				            if ( ind == 0 )
+				            {
+				            	optgroup = optgroup +  "<option value='" + id + "'>" + name + "</option>";
+				            }
+				            else
+				            {
+				            	optgroup = optgroup +  "<option value='" + id + "'>" + name + "</option>";
+				            }
+
+				            ind = ind + 1;
+				        }
+
+				        optgroup = optgroup + "</optgroup>";
+				    };
+
+					document.getElementById("select_sql_title").innerHTML = optgroup;
+					// document.getElementById("select2-chosen-1").textContent = "";
+					// document.getElementById('select_sql_title').selectedIndex = 0;
+
+
+
+                },
+	    complete:function(){
+	        // $('.wrap-loading').addClass('display-none');
+	    },
+
+      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+      	alert("SQL 삭제 시 에러" + "\n" + "* message :"+  "\n" + request.responseText)
+      },
+});
+  })
+
+  $("#btn_sql_save_name_ok").click(function(){
+  	// #################################################################
+  	// ## 저장
+  	// ## ajaxOtherSaveNameSQL
+  	// #################################################################
+
+	  	savedname = document.getElementById("txt_sql_save_name").value;
+
+	  	if((savedname == "")||(savedname==null))
+	  	{
+	  		alert("저장할 이름을 입력해주세요");
+	  	}
+
+
+	  	if ( savedname )
+	  	{
+		  	savedexplain = document.getElementById("txt_sql_save_explain").value;
+
+		  	select_db = $("select_db");
+
+		  	var select_db_numbers = [];
+	  	    $('#select_db :selected').each(function(i, selected) {
+	  	        select_db_numbers[i] = $(selected).val();
+	  	    });
+
+
+			select_domain = $("select_domain");
+
+		  	var select_domain_numbers = [];
+	  	    $('#select_domain :selected').each(function(i, selected) {
+	  	        select_domain_numbers[i] = $(selected).val();
+	  	    });
+
+		  	// 현재 열려있는 창
+		  	var tabFirst = $('#tab-list .active a');
+		  	var currId = tabFirst.attr("id");
+
+		  	savedsql = listSQLEditorTabs[currId].getValue();
+
+		  	savedsqlid = listSQLInfo_sqlid[currId];
+
+
+
+		  	document.getElementById('table_sql_explain').style.visibility = "visible"
+
+		  	// 신규 저장 시 SELECT 박스 SELECTED 해제
+		  	// $('#select_sql_title').val('').trigger('liszt:updated');
+
+	  		    $.ajax({
+	  		      type: "POST",
+	  		      url: "{% url 'ajaxOtherSaveNameSQL' %}",
+	  		      data: { 'savedsqlid':savedsqlid,
+	  		              'savedname':savedname,
+	  		              'savedexplain':savedexplain,
+	  		              'savedsql':savedsql,
+	  		              'select_db_numbers':select_db_numbers,
+	  		              'select_domain_numbers':select_domain_numbers,
+	  		              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	  		      dataType: "json",
+	  		      "success": function(json) {
+
+	  		                    // $('#select_sql_title').prepend('<option selected value="' + json['data'].ID + '">' + json['data'].DATA_TITLE +'</option>');
+	  		                    editor_select.setValue(json['data'].SQL_TEXT);
+
+	  		                    $("#reg_dtm").html(json['data'].REG_DTM);
+	  		                    $("#mod_dtm").html(json['data'].MOD_DTM);
+
+	  		                    $("#data_title").html(json['data'].DATA_TITLE);
+
+	  		                    $("#sql_title").html(json['data'].DATA_TITLE);
+	  		                    listSQLInfo_title[currId] = json['data'].DATA_TITLE;
+
+	  		                    $("#sql_title_hidden").html(json['data'].TITLE);
+	  		                    listSQLInfo_hidden[currId] = json['data'].TITLE;
+
+	  		                    $("#data_explain").html(json['data'].DATA_EXPLAIN);
+	  		                    listSQLInfo_explain[currId] = json['data'].DATA_EXPLAIN
+	  		                    // <option value="{{sql_title.0}}">{{sql_title.1}}</option>
+	  		                    // // json['data']
+
+
+	  		                    // LIST BOX 다시 그리기
+			                    $('#select_sql_title').empty();
+
+							    var optgroup = "";
+							    var ind = 0;
+							    var selectedvalue = "";
+
+							    for ( k in json['data_list'] ) {
+							        var optgroup = optgroup +  "<optgroup label='"+k+"'>";
+
+							        for( v in json['data_list'][k] ) {
+							            name = json['data_list'][k][v][1];
+							            id = json['data_list'][k][v][0];
+
+
+
+							            if ( ind == 0 )
+							            {
+							            	optgroup = optgroup +  "<option value='" + id + "'>" + name + "</option>";
+							            	selectedvalue = name;
+							            }
+							            else
+							            {
+							            	optgroup = optgroup +  "<option value='" + id + "'>" + name + "</option>";
+							            }
+
+							            ind = ind + 1;
+							        }
+
+							        optgroup = optgroup + "</optgroup>";
+							    };
+
+								document.getElementById("select_sql_title").innerHTML = optgroup;
+								// document.getElementById("select2-chosen-1").textContent = selectedvalue;
+								// document.getElementById('select_sql_title').selectedIndex = 0;
+
+
+	  		                    // focus 맨 윗 아이템에 맞추기
+	  		                    document.getElementById('select_sql_title').selectedIndex = 0;
+
+	  		                    document.getElementById('btn_share').disabled = false;
+	  		                    document.getElementById('btn_load').disabled = true;
+	  		                    document.getElementById('btn_delete').disabled = false;
+	  		                    document.getElementById('btn_tuning').disabled = false;
+  		                    	$("#span_btn_share").html("동료와 공유");
+  		                    	$("#span_modal_share").html("동료와 SQL을 공유하시겠습니까?")
+  		                    	$("#span_btn_tuning").html("속도개선 요청")
+
+	  		                    $('#tab-list-result a[href="#sql_history"]').tab('show');
+
+
+	  		                },
+	  		        beforeSend:function(){
+	  					        $('.wrap-loading').removeClass('display-none');
+	  					    },
+	  			    complete:function(){
+	  			        $('.wrap-loading').addClass('display-none');
+	  			    },
+
+	  		      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	  		      	alert("작성한 SQL에 에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	  		      },
+		    });
+
+
+		  	$("#btn_sql_save_name_cancel").click();
+
+	  	}
+  })
+
+    $("#btn_share_ok").click(function(){
+    	// #################################################################
+    	// ## 동료와 공유/해제
+    	// ## ajaxOtherSaveNameSQL
+    	// #################################################################
+
+    	var sel = document.getElementById("select_sql_title");
+		var sql_id = sel.options[sel.selectedIndex].value;
+
+
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxShareSQL' %}",
+	      data: { 'sql_id':sql_id,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+			      	$("#span_btn_share").html(json['data'][0]);
+			      	$("#span_modal_share").html(json['data'][1]);
+
+					// $('#select_sql_title').empty();
+			  //     	$.each(json['data_list'], function(index, value) {
+			  //       $('#select_sql_title').append($('<option>').text(value.DATA_TITLE).val(value.ID));
+				 //    });
+                    $('#select_sql_title').empty();
+
+				    var optgroup = "";
+				    var ind = 0;
+				    var selectedvalue = "";
+
+				    for ( k in json['data_list'] ) {
+				        var optgroup = optgroup +  "<optgroup label='"+k+"'>";
+
+				        for( v in json['data_list'][k] ) {
+				            name = json['data_list'][k][v][1];
+				            id = json['data_list'][k][v][0];
+
+				            if ( id ==sql_id )
+				            {
+								selectedvalue = name;
+				            }
+
+				            if ( ind == 0 )
+				            {
+				            	optgroup = optgroup +  "<option value='" + id + "'>" + name + "</option>";
+				            }
+				            else
+				            {
+				            	optgroup = optgroup +  "<option value='" + id + "'>" + name + "</option>";
+				            }
+
+				            ind = ind + 1;
+				        }
+
+				        optgroup = optgroup + "</optgroup>";
+				    };
+
+					document.getElementById("select_sql_title").innerHTML = optgroup;
+					// document.getElementById("select2-chosen-1").textContent = selectedvalue;
+					// idx = $("#select_sql_title").find('option[value="'+sql_id+'"]').index()
+					// document.getElementById('select_sql_title').selectedIndex = idx;
+					// $("#select_sql_title").find('option[value="sql_id"]').attr('selected','selected')
+
+
+	                },
+	        beforeSend:function(){
+				        $('.wrap-loading').removeClass('display-none');
+				    },
+		    complete:function(){
+		        $('.wrap-loading').addClass('display-none');
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("작성한 SQL에 에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+
+		$("#btn_share_cancel").click();
+
+    })
+
+	$("#btn_tuning").click(function(){
+
+		title = document.getElementById("data_title").textContent;
+		document.getElementById("txt_tuning_tobe_time").value = '';
+		document.getElementById("txt_tuning_asis_time").value = '';
+		document.getElementById("txt_tuning_explain").value = '';
+	})
+
+
+
+    $("#btn_tuning_ok").click(function(){
+    	// console.log("## btn_tuning_ok click");
+
+    	var sel = document.getElementById("select_sql_title");
+		var sql_id = sel.options[sel.selectedIndex].value;
+
+		var tuning_title = document.getElementById("txt_tuning_title").value;
+		var tuning_tobe_time = document.getElementById("txt_tuning_tobe_time").value;
+		var tuning_asis_time = document.getElementById("txt_tuning_asis_time").value;
+		var tuning_explain = document.getElementById("txt_tuning_explain").value;
+
+
+		if((tuning_title == "")||(tuning_title==null))
+		{
+			alert("제목을 입력해주세요");
+			return;
+		}
+		if((tuning_asis_time == "")||(tuning_asis_time==null))
+		{
+			alert("현재 응답시간을 입력해주세요");
+			return;
+		}
+		if((tuning_tobe_time == "")||(tuning_tobe_time==null))
+		{
+			alert("기대 응답시간을 입력해주세요");
+			return;
+		}
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestTuning' %}",
+	      data: { 'sql_id':sql_id,
+	      		  'tuning_tobe_time':tuning_tobe_time,
+	      		  'tuning_asis_time':tuning_asis_time,
+	      		  'tuning_explain':tuning_explain,
+	      		  'tuning_title':tuning_title,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+			      		$("#span_btn_tuning").html("속도개선 요청 중")
+			      		document.getElementById('btn_tuning').disabled = true;
+	                },
+	        beforeSend:function(){
+				        $('.wrap-loading').removeClass('display-none');
+				    },
+		    complete:function(){
+		        $('.wrap-loading').addClass('display-none');
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+
+
+    	$("#btn_tuning_cancel").click();
+
+    });
+
+
+
+
+    let repeat;
+  	function elasedTime(theObject) {
+
+  		 var tabFirst = $('#tab-list .active a');
+  		 var currId = tabFirst.attr("id");
+  	     var $output1 = $("#output1");
+  	     var $output2 = $("#output2");
+         var count = 0;
+
+         // 여기에 풀이를 입력해주세요.
+         // 함수 생성
+         function addCount() {
+             // 값 증가
+             count++;
+             // 값을 출력
+             $output1.text(count);
+
+             if ( listSQLInfo_avgtime[currId] != "" )
+             {
+	             $output2.text('평균 수행시간 : ' + listSQLInfo_avgtime[currId]);
+	         }
+         }
+
+         addCount();
+         repeat = setInterval(addCount, 1000);
+  	 }
+
+
+
+  $("#btn_sql").click(function(){
+  	// #################################################################
+  	// ## 실행 버튼 클릭 시
+  	// ## ajaxExecuteSQL
+  	// #################################################################
+
+
+  	// 열려있는 SQL TAB
+  	var tabFirst = $('#tab-list .active a');
+  	var currId = tabFirst.attr("id");
+
+	// SQL 결과 창으로 tab focus 이동
+	$('#tab-list-result a[href="#sql_result'+currId+'"]').tab('show');
+  	sql = listSQLEditorTabs[currId].getValue();
+  	sql_id = listSQLInfo_sqlid[currId];
+
+
+
+  	var $output = $("#output");
+  	$output.text(0);
+
+  	elasedTime();
+
+
+
+  	if ( sql ) {
+
+  		// console.log("sql 실행 진입");
+
+	    xhr = $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxExecuteSQL' %}",
+	      data: { 'sql':sql,
+	              'sql_id':sql_id,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	                    if  ( json.error_yn == "N" )
+	                    {
+
+		                    var tableHeaders='';
+		                    $.each(json.columns, function(i, val){
+		                        tableHeaders += "<th>" + val + "</th>";
+
+		                    });
+
+		                    // var option='data-plugin-options=\'{"searchPlaceholder": "결과 내 검색"}\''
+
+		                    listSQLResultTabs[currId].empty();                   
+
+
+		                    listSQLResultTabs[currId].append('<table width="100%" style="white-space: nowrap;" id="datatable-default'+currId+'" class="table table-bordered table-striped mb-none csort" ><thead><tr>' + tableHeaders + '</tr></thead></table>');
+
+
+		                    const localDataTable = $('#datatable-default'+currId).DataTable({
+					            responsive: true,
+					            "scrollX": true,
+					            // "scrollY": "200px",
+								"scrollCollapse": true,
+					            "pageLength": 10,
+					            "order": [],
+					            "bFilter": true,
+					            "paging": true,
+					            data: json['data']
+
+					        });
+					        schemaDataTable[currId] = localDataTable;
+					        schemaDataTable[currId].columns.adjust().draw();
+
+					        listSQLError[currId] = "[성공] 조회시간 : " + json['time'].toFixed(3) + " (초)";
+					        $("#txt_error").html(listSQLError[currId]);
+
+					        clearInterval(repeat);
+					    }
+					    else
+					    {
+							listSQLError[currId] = json.message;
+							$("#txt_error").html(listSQLError[currId]);					    	
+					    }
+	                },
+	        beforeSend:function(){
+				        $('.wrap-loading').removeClass('display-none');
+				    },
+		    complete:function(){
+		        $('.wrap-loading').addClass('display-none');
+		    },
+	      error: function(request, status, error){
+	      	// alert("작성한 SQL에 에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      	clearInterval(repeat);
+	      	if (xhr.statusText == 'abort') {
+	            return;
+	        }
+	        else {
+	        	var msg = request.responseText;
+	        	if( msg.indexOf("ORA-") != -1 ){
+	        		var start = msg.indexOf("ORA-");
+	        		var end = msg.indexOf("Request Method");
+	        		var exp_msg = msg.substr(start,end-start);
+	        		listSQLError[currId] = "[오류] " + exp_msg;
+	        		$("#txt_error").html(listSQLError[currId]);
+	        	}
+	        }
+	      },
+	    });
+	}
+  })
+
+  $("#btn_ajax_cancel").click(function(){
+  	var tabFirst = $('#tab-list .active a');
+  	var currId = tabFirst.attr("id");
+
+  	listSQLError[currId] = '[메시지] SQL 실행 취소됨';
+  	$("#txt_error").html(listSQLError[currId]);
+  	xhr.abort();
+  	// alert(xhr);
+  })
+</script>
+
+<script>
+	$('.tabs a').click(function (e) {
+            // e.stopImmediatePropagation();
+
+            $(this).tab('show');
+            for(const key in schemaDataTable){
+            	schemaDataTable[key].columns.adjust().draw();
+            }
+
+
+            // schemaDataTable.columns.adjust().draw();
+
+        });
+
+
+</script>
+
+
+
+
+
+
+
+{%endblock%}
+
+
+
+
+
+

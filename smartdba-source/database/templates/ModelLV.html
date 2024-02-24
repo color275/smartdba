@@ -1,0 +1,109 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+{% block title %}Smart-모델{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    
+      <style type="text/css">
+          
+
+
+      </style>    
+    
+</head>
+
+<header class="page-header">
+	<h2> 데이터 모델 (ERD)</h2>
+  <div class="right-wrapper pull-right">
+    <ol class="breadcrumbs">
+      <li>        
+        {% if user.is_superuser %}
+          <a href="http://{{ request.get_host }}/admin/database/datamodel/" target="blank">&nbsp;
+            <button type="button" class="btn btn-xs btn-success">Admin</button>
+          </a>
+        {% endif %}
+      </li>
+    </ol>&nbsp;&nbsp;&nbsp;&nbsp; 
+  </div>
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}
+  <div class="alert alert-info">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+    <strong># 데이터 모델(ERD) 원본 파일(*.dbs) 위치 : <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=38581201" target="blank">링크</a></strong><br>
+    <strong># 데이터 모델링 가이드 : <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=38583752" target="blank">링크</a></strong>
+  </div>
+
+  
+  
+  {% for k,v in model.items %}     
+      {% if v.1|length > 1 %}
+      <table class="table table-bordered" cellspacing="0px" cellpadding="0px">
+      <tr>
+        <th style="text-align: center;width:150px;background-color: black"><font color="white"><b>{{k}}</b></font></th>    
+        {% for i in v.1 %}     
+          <td style="text-align: center;">
+            <a target="_blank" href="{{i.file.url}}">{{i.id_domainanddblist.id_domain.domain_name}}</a> {% if i.id_domainanddblist.it_manager.all %}</a><font size=1>({% for user in i.id_domainanddblist.it_manager.all %}{{ user.first_name }}M{% endfor %})</font>{%endif%}
+          </td>
+        {% endfor %}
+      </tr>    
+      </table>
+      {% else %}
+        {% for i in v.1 %}     
+        <table class="table table-bordered" width="10%" >
+        <tr>
+          <th style="width:100px"><a target="_blank" href="{{i.file.url}}">{{i.id_domainanddblist.id_dblist.db_use}}</a> {% if i.id_domainanddblist.it_manager.all %}</a><font size=1>({% for user in i.id_domainanddblist.it_manager.all %}{{ user.first_name }}M{% endfor %})</font>{%endif%}</th>    
+        </tr>
+        </table>
+        {% endfor %}
+      {% endif %}    
+  {% endfor %}
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+
+{%endblock%}
+
+
+
+
+
+

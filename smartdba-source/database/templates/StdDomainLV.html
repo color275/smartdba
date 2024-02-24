@@ -1,0 +1,592 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+{% block title %}Smart-도메인{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        .td_fix_center {
+        	white-space: nowrap;
+        	text-align: center;
+        	vertical-align: middle;        	
+        }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2> 표준 도메인 리스트</h2>
+	<div class="right-wrapper pull-right">
+		<ol class="breadcrumbs">
+			<li>				
+				{% if user.is_superuser %}
+				  <a href="http://{{ request.get_host }}/admin/database/stddomain/" target="blank">&nbsp;
+				    <button type="button" class="btn btn-xs btn-success">Admin</button>
+				  </a>
+				{% endif %}
+			</li>
+		</ol>&nbsp;&nbsp;&nbsp;&nbsp;	
+	</div>
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}
+
+
+
+	<header class="panel-heading" style="padding-bottom: 3px">
+
+					<div class="form-group">
+
+
+							<div class="form-inline">
+								<div class="form-group">
+
+									<div class="alert alert-info">
+										<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+										<strong>금액 : number(15), 내용 : varchar(500), 율 : number(5,2)</strong> 등 컬럼의 데이터타입을 조회/신청하는 화면입니다. 자세한 설명은 <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30117972" target="blank" class="alert-link">[도움말]</a> 클릭하세요
+									</div>
+
+									<input class="form-control" id="txt_word" name="txt_word" style='width:300px' placeholder="율" required>
+
+									<button id="btn_attr_select" type="button" class="btn btn-primary">도메인 조회</button> 
+									<a href="#btn_div_attr_modal" class="modal-with-form btn btn-primary" onload="f_clear()">도메인 신청</a>					
+								</div>
+							</div>
+
+
+					</div>
+
+
+					<div class="pull-left">
+						<div class="form-inline">
+							{{form.id_std_domaintype}}
+							{{ form.media }}
+						</div>
+					</div>
+					<br><br>
+
+					<div id="btn_div_attr_modal" class="modal-block modal-block-primary mfp-hide">
+						<section class="panel">
+							<header class="panel-heading">
+								<h2 class="panel-title">도메인 신청</h2>
+							</header>
+							<div class="panel-body">
+								<form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate">
+
+									<div class="form-group">
+										<label class="col-sm-3 control-label">도메인명<font color=red><b> *</b></font></label>
+
+										<div class="col-sm-9">
+											{{form.domain_name}}
+											 <i><b><code>~코드, ~번호</code>의 경우 "xxxxxxx채널번호" 처럼 어떤 내용의 채널번호인지를 알 수 있는 수식어가 필요합니다. 모호하지 않은 명명으로 입력해주세요</b></i>
+
+										</div>
+										<br><br><br><br><br>										
+										<label class="col-sm-3 control-label">데이터타입<font color=red><b> *</b></font></label>
+										<div class="col-sm-9">
+											{{form.data_type}}
+										</div>
+										<br><br><br>
+										<label class="col-sm-3 control-label">데이터길이<font color=red><b> *</b></font></label>
+										<div class="col-sm-9">
+											{{form.leng}}
+										</div>
+										<br><br><br>
+										<label class="col-sm-3 control-label">데이터소수점길이</label>
+										<div class="col-sm-9">
+											{{form.decimal_leng}}
+										</div>
+										<br><br><br>
+										<label class="col-sm-3 control-label">설명<font color=red><b> *</b></font></label>
+										<div class="col-sm-9">
+											{{form.expl}}
+										</div>
+										<br><br><br><br><br><br><br><br><br><br>
+										<label class="col-sm-3 control-label">코드타입</label>										
+										<div class="col-sm-4">
+											{{form.group_code_yn}}
+										</div>										
+										<div class="col-sm-5">
+											{{form.group_code}}											
+										</div>
+										<br>
+										<label class="col-sm-3 control-label"></label>
+										<div class="col-sm-9">
+										<i><b><code>~코드</code> 형태의 "코드 도메인"일 경우 필수 입력 항목<br>공통코드로 사용 시 그룹코드 선택, 그룹코드 명 입력 / <br>별도 테이블에서 사용 할 경우 개별코드 선택, 테이블 영문명 입력해 주세요</b></i>
+										</div>
+										<br><br>
+									</div>
+									<br>
+									<font color=red><div id="div_modal_error"></div></font>
+								</form>
+							</div>
+							<footer class="panel-footer">
+								<div class="row">
+									<div class="col-md-12 text-right">
+										<button id="btn_domain_aceept_ok" type="button" class="btn btn-primary">요청</button>
+										<button id="btn_domain_aceept_no" class="btn btn-default modal-dismiss">취소</button>
+									</div>
+								</div>
+							</footer>
+						</section>
+					</div>
+
+
+	</header>
+	<br>
+
+	<div id="div_result_select" style="display: none">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">도메인 조회 결과</h2>
+			</header>
+			<div class="panel-body">
+				<div id="result_select"></div>
+			</div>
+		</section>
+	</div>
+
+
+	{% if req_domain %}
+	<section class="panel">
+		<header class="panel-heading">
+			<h2 class="panel-title">현재 신청 중인 도메인</h2>
+		</header>
+		<div class="panel-body">
+			<table class="table table-bordered table-striped mb-none csort" id="datatable-default1">
+                <thead>
+                    <tr>
+                        <th class="td_fix_center">도메인명</th>
+                        <th class="td_fix_center">데이터타입</th>                        
+                        <th class="td_fix_center">그룹코드</th>
+                        <th class="td_fix_center">설명</th>
+                        <th class="td_fix_center">신청자</th>
+                        <th class="td_fix_center">신청일</th>
+                        <th class="td_fix_center">승인여부</th>
+                        <th class="td_fix_center">반려사유</th>
+                        <th class="td_fix_center">취소</th>
+                        {% if request.user.is_superuser %}
+                        <th class="td_fix_center">승인/반려</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in req_domain %}
+                        <tr>
+                            <td class="td_fix_center">{{data.domain_name}}</td>
+                            <td class="td_fix_center">{{data.info_type}}</td>                            
+                            <td class="td_fix_center">{% if data.group_code is not null %}{{data.get_group_code_yn_display}} / {{data.group_code}}{%endif%}</td>
+                            <td>{{data.expl}}</td>
+                            <td class="td_fix_center">{{data.id_reg_user}}</td>
+                            <td class="td_fix_center">{{data.reg_dtm|date:"Y/m/d"}}</td>
+                            <td class="td_fix_center"><font color=red><b>{{data.get_accept_yn_display}}</b></font></td>
+                            <td class="">{{data.reject_exp|default_if_none:"--"}}</td>
+                            <td class="td_fix_center">                            	
+                            	{% if request.user.id == data.id_reg_user.id %}                            	
+                            	<a class="btn-sm btn btn-default" onclick="f_req_cancel('{{data.id}}')">취소</a>
+                            	{% endif %}                            	
+                           	</td>
+                           	{% if request.user.is_superuser %}
+                           	<td class="td_fix_center">
+                           		{% if data.accept_yn == '1' %}
+                           		<a href="#btn_req_accept_modal" class="modal-with-form btn-xs btn btn-success" onclick="f_save_req_id('{{data.id}}')">Click</a>
+                           		{% endif %}
+                           	</td>
+                           	{% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+		</div>
+	</section>
+	<div id="div_req_accept" style="display: none"></div>
+	<div id="btn_req_accept_modal" class="modal-block modal-block-primary mfp-hide">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">승인합니까?</h2>
+			</header>
+			<div class="panel-body">
+				<form id="demo-form" class="form-horizontal mb-lg" novalidate="novalidate">
+					<div class="form-group">							
+						<label class="col-sm-3 control-label">Comment 또는<br>반려사유</label>
+						<div class="col-sm-9">
+							<textarea rows="5" class="form-control" id = "txt_aceept" name = "txt_aceept" placeholder="승인합니다 / .....이유로 반려합니다." ></textarea>
+						</div>
+					</div>
+					<br>
+				</form>
+			</div>
+			<footer class="panel-footer">
+				<div class="row">
+					<div class="col-md-12 text-right">
+						<button id="btn_aceept_ok" type="button" class="btn btn-primary">승인</button>
+						<button id="btn_aceept_reject" type="button" class="btn btn-danger">반려</button>
+						<button id="btn_aceept_no" class="btn btn-default modal-dismiss">취소</button>
+					</div>
+				</div>
+			</footer>
+		</section>
+	</div>
+	{% endif %}
+
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+
+
+	function f_clear(){
+		$("#id_domain_name").val() = ""
+		$("#id_data_type").val() = ""
+		$("#id_leng").val() = ""
+		$("#id_decimal_leng").val() = ""
+		$("#id_expl").val() = ""
+
+	}
+
+	$("#btn_aceept_ok").click(function(){
+
+		req_id = $("#div_req_accept").html();
+		var comment = $("#txt_aceept").val()
+
+		console.log(req_id)
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'comment' : comment,
+	      		  'std_div' : 1, // 도메인
+	      		  'req_div' : 0, // 승인
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)			      	
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	$("#btn_aceept_reject").click(function(){
+
+		req_id = $("#div_req_accept").html();
+		var comment = $("#txt_aceept").val()
+
+		if ( comment == "" ) {
+			alert("반려 메시지를 꼭 작성해주세요")
+			return
+		}
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'comment' : comment,
+	      		  'std_div' : 1, // 도메인
+	      		  'req_div' : 2, // 반려
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)			      	
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	function f_save_req_id(req_id) {
+		$("#div_req_accept").html(req_id);
+	}
+
+
+
+	function f_req_cancel(req_id) {		
+		var comment = $("#txt_aceept").val()
+
+		if ( confirm('신청한 도메인을 취소하겠습니까?') == false ) 
+			return
+		
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestStdModify' %}",
+	      data: {
+	      		  'req_id' : req_id,
+	      		  'std_div' : 1, // 도메인
+	      		  'req_div' : 1, // 취소
+	      		  'comment' : comment,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_yn == "Y")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert(json.error_msg)			      	
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	};
+
+
+	$("#btn_domain_aceept_ok").click(function(){
+
+		$("#div_modal_error").html("")
+
+		var id_domain_name = $("#id_domain_name").val()
+		var id_group_code = $("#id_group_code").val()
+
+		var e = document.getElementById("id_data_type");
+		var id_data_type_text = e.options[e.selectedIndex].text;
+		var id_data_type_value = e.options[e.selectedIndex].value;
+
+		var e = document.getElementById("id_group_code_yn");
+		var id_group_code_yn_text = e.options[e.selectedIndex].text;
+		var id_group_code_yn_value = e.options[e.selectedIndex].value;
+
+		// var id_data_type = $("#id_data_type").text()
+		var id_leng = $("#id_leng").val()
+		var id_decimal_leng = $("#id_decimal_leng").val()
+		var id_expl = $("#id_expl").val()
+
+		
+		code_yn = id_domain_name.substr(id_domain_name.length - 2);
+
+		console.log(code_yn)
+
+		if ( code_yn == "코드" )
+		{
+			if (id_data_type_value == "" || id_group_code == "")
+			{
+				$("#div_modal_error").html("* 오류 : 코드타입을 입력해주세요")
+				return;		
+			}
+		}
+
+
+		if (id_domain_name == "" || id_expl == "")
+		{
+			$("#div_modal_error").html("* 오류 : 도메인명과 데이터타입, 설명은 반드시 입력되어야 합니다.")
+			return;
+		}
+
+		if ( id_data_type_value == "1" && id_leng == "" )
+		{
+			$("#div_modal_error").html("* 오류 : 문자열 선택 시 데이터길이는 반드시 입력되어야 합니다.")
+			return;
+		}
+		if ( id_data_type_value == "2" && id_leng == "" )
+		{
+			$("#div_modal_error").html("* 오류 : 숫자 선택 시 데이터길이는 반드시 입력되어야 합니다.")
+			return;
+		}
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxRequestNewDomain' %}",
+	      data: {
+	      		  'id_domain_name' : id_domain_name,
+	      		  'id_data_type_text' : id_data_type_text,
+	      		  'id_data_type_value' : id_data_type_value,
+	      		  'id_leng' : id_leng,
+	      		  'id_decimal_leng' : id_decimal_leng,
+	      		  'id_expl' : id_expl,
+	      		  'id_group_code' :id_group_code,
+	      		  'id_group_code_yn_value' :id_group_code_yn_value,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		if (json.error_msg != "")
+	      			$("#div_modal_error").html(json.error_msg)
+		      	else
+		      	  {
+			      	alert("완료되었습니다.")
+			      	$("#btn_domain_aceept_no").click();
+			      	location.reload();
+			      }
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+	$("#txt_word").keyup(function(event) {
+	    if (event.keyCode === 13) {
+		    	$("#btn_attr_select").click();
+		    }
+	});
+
+	$("#btn_attr_select").click(function(){
+
+		var word = $("#txt_word").val()
+
+
+
+		var sel = document.getElementById('id_id_std_domaintype');
+		var opt = sel.options[sel.selectedIndex];
+		id_id_std_domaintype = opt.value
+
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxSelectDomain' %}",
+	      data: { 'word' : word,
+	      		  'id_id_std_domaintype' : id_id_std_domaintype,
+	      		  // 'id_dblist' : id_dblist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      		console.log(json.word_data)
+
+
+	            $("#result_select").html('<table width="100%" id="datatable-default" class="table table-bordered table-striped mb-none csort" ><thead><tr><th>도메인명</th><th>인포타입</th><th>데이터타입(ORACLE)</th><th>데이터타입(MYSQL)</th><th>설명</th></tr></thead></table>')
+
+	            const localDataTable = $('#datatable-default').DataTable({
+				            //responsive: true,
+				            // "scrollX": true,
+				            // "scrollY": "200px",
+							"scrollCollapse": true,
+				            "pageLength": 100,
+				            "bFilter": true,
+				            "paging": true,
+				            "order" : false,
+				            data: json.word_data
+
+				});
+
+				$("#div_result_select").show()
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+
+
+
+
+</script>
+
+
+{%endblock%}
+
+
+
+
+
+

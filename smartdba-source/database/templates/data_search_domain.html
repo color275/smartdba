@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+
+
+
+{%block content %}
+
+<head>
+
+	
+</head>
+
+
+
+<form method="POST" action="{% url 'executeSQL' %}" >
+{%csrf_token%}
+
+	<section class="panel">
+			<header class="page-header">
+				<h2>궁금한 데이터를 찾아보세요</h2>				
+			</header>
+			
+			<!-- justified -->
+			<div class="row">
+				<div class="col-md-5">
+					<div class="tabs">
+						<ul class="nav nav-tabs">
+							{% for k, v in dataset_domain_2.items %}							
+								<li {% if forloop.counter0 == 0 %}class="active"{%endif%} >
+									<a href="#{{v.0.3}}" data-toggle="tab" class="text-center">{{k}}</a>
+								</li>
+							{% endfor %}
+
+						</ul>
+						<div class="tab-content">
+							{% for k, v in dataset_domain_2.items %}
+								<div id="{{v.0.3}}" class="tab-pane {% if forloop.counter0 == 0 %}active {%endif%}">
+									<div id="dynamicJstree_{{forloop.counter0}}">
+										<ul>
+											{% for comments, table_id, column_or_data, domain_order in v %}
+												<li id="{{table_id}}" data-jstree='{ "opened" : true, "icon" : "{% static 'assets/images/jstree3.png' %}" }' class="click_upper folder"  table_id="{{table_id}}" column_or_data="{{column_or_data}}">
+													{{comments}}
+												</li>
+											{% endfor %}
+										</ul>
+									</div>
+								</div>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+
+			
+			
+				<!-- 
+				#################################
+				## 여기서 부터 복사
+				#################################
+				 -->
+				<div id="tabs_view" class="col-md-7">
+					<div class="tabs">
+						<ul class="nav nav-tabs">
+							<li class="active">
+								<a href="#popular" data-toggle="tab">데이터 정보</a>
+							</li>
+							<li>
+								<a href="#recent" data-toggle="tab">스키마 정보</a>
+							</li>
+						</ul>
+						<div class="tab-content">
+							<div id="popular" class="tab-pane active">
+
+								<div class="col-md-13" id="column_detail">
+									<section class="panel">
+										<header class="panel-heading">
+											<input  id="sql_id" type="hidden" name="sql_id">									
+											<input  id="data_type" type="hidden" name="data_type">								
+											<div class="row">
+												<div class="col-md-9 mt-md">
+													<h2 class="h2 mt-none mb-sm text-dark text-bold" id="col_comments">{{dataset.col_comments}}</h2>											
+													<input id="input_col_comments" name="col_comments" value="{{dataset.col_comments}}" type="hidden" >
+													<h5 class="h5 m-none text-dark text-bold" ><span id="domain_name">{{dataset.domain_name}}</span>&nbsp;<i class="fa  fa-chevron-right" aria-hidden="true"></i>&nbsp;<span id="comments">{{dataset.comments}}</span> </h5>
+												</div>
+												<div class="col-md-3 text-right"> 
+														<i class="fa fa-male" aria-hidden="true"></i>&nbsp;&nbsp;<span id="it_manager_name"></span> (<span id="it_manager_team"></span>)
+														<br/>
+														<i class="fa fa-mobile" aria-hidden="true"></i>&nbsp;&nbsp;&nbsp;<span id="it_manager_tel"></span>
+														<br/>
+														<i class="fa fa-comments-o" aria-hidden="true"></i>&nbsp;<span id="it_manager_mail"></span>
+												</div>
+											</div> 
+										</header>
+										<div class="panel-body">
+											<div class="bill-info">
+												<div class="row">
+													<div class="col-md-12">
+														<div class="bill-to">
+															<p class="h5 mb-xs text-success text-semibold"><i class="fa   fa-check-square-o" aria-hidden="true"></i> 데이터 설명: </p>
+															<ul>
+																<li><b><span id="column_explain"></span></b></li>
+															</ul>
+														</div>
+
+													</div>
+
+												</div>
+											</div>
+
+											<div class="table-responsive">
+												<p class="h5 mb-xs text-success text-semibold"><i class="fa   fa-check-square-o" aria-hidden="true"></i> 데이터 상세</p>
+													<ul>
+														<li><b>저장되어 있는 위치</b> : <span id="db_use">{{dataset.db_use}}</span> <a href="#" dataset-toggle="tooltip" data-placement="top" title="클릭: 접속 방법을 확인하세요"><i class="fa fa-external-link"></i></a></li>
+														<li><b>데이터 수정 시간</b> : 실시간/배치(1시간 주기) </li>
+														<li><b>테이블 명(한글/영문)</b> : <span id="comments">{{dataset.comments}}</span> / <span id="table_name">{{dataset.table_name}}</span></li>
+														<li><b>컬럼 명(한글/영문)</b> : <span id="col_comments2">{{dataset.col_comments}}</span> / <span id="column_name">{{dataset.column_name}}</span></li>
+														
+													</ul>
+											</div>
+
+											<br>
+
+											<p class="h5 mb-xs text-success text-semibold"><i class="fa fa-check-square-o" aria-hidden="true"></i> SQL 샘플 (결과를 확인해보세요)</p>
+											<div style="width:100%">
+													<textarea style="width:100%" class="text_sql form-control" id="codemirror_sql_code1" name="text_sql">{{dataset.sql_text}}</textarea>
+											</div>			
+
+
+
+											<br>
+											<div class="text-right">
+												<button class="btn_sql mb-xs mt-xs mr-xs btn btn-primary" type="input" formaction="{% url 'executeSQL' %}" formtarget="_blank">SQL실행</button>															
+											</div>
+										</div>	
+
+
+
+									</section>
+								
+
+								</div>
+							</div>
+							
+								<div id="recent" class="tab-pane">
+									
+									<div id="tableDiv" width="100%">
+									</div>
+								</div>
+							
+						</div>
+					</div>
+				</div>
+			</div>
+
+
+
+				
+
+
+
+
+	</section>
+
+<script type="text/javascript">
+	$(document).ready(function(e) {
+	alert('1');	
+	});
+</script>
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>		
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>		
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+
+<script>
+	$('#datatable-default').DataTable({
+            responsive: true,
+            "pageLength": 10,
+            "order": []
+
+        });
+</script>
+
+<script type="text/javascript">
+	const jstreeIdArray = [0,1,2,3];
+	$(document).ready(function(e) {
+		$('#tabs_view').hide();
+		$('#column_detail').hide();		
+
+		jstreeIdArray.map(key=>{
+		
+			if ($('#dynamicJstree_'+key).length === 0) return;
+
+			$('#dynamicJstree_'+key).jstree(
+				{
+					core: {'check_callback': true},
+					plugins : [
+								"unique",							
+							  ]	
+
+				}
+			);
+		});		
+	});
+</script>
+		
+
+<script type="text/javascript">
+  // $(".btn_detail").click(function(){
+  // $("#datatable-default").on("click", ".btn_detail", function(){
+  // click_li
+  $(document).on('click', '.click_upper', function () {		  
+
+  	
+	  	// var domain_id = $(this).attr('domain_id');  	
+	  	var table_id = $(this).attr('table_id');
+	  	var data_type = $(this).attr('column_or_data');
+
+	  	
+
+
+	  	// var data_type = $(this).attr('data_type');  	  	
+
+	  	//하위에 데이터가 있으면 패스
+
+	  	// if($('#dynamicJstree').jstree().get_children_dom ($("#"+table_id)) === [])
+
+
+
+	  	if( data_type == 0 )
+	  	{
+		    $.ajax({
+					 url: "{% url 'ajaxDomain' %}"
+			       , type		: "POST"
+			       , dataType	: "json"
+			       , async 		: false								       
+			       , data: { table_id : table_id, 'csrfmiddlewaretoken': '{{ csrf_token }}'} // 서버로 데이터 전송시 옵션
+			       , success	: function(data){
+
+								       	jstreeIdArray.map(key=> {
+								       	
+								    	   $.each(data.columnList, function(i, obj) {
+								    	   	   // alert(obj.COL_COMMENTS);
+								    		   $('#dynamicJstree_'+key).jstree(
+			    	   									'create_node'
+			    	   								  , $('#'+table_id)
+			    	   								  , {"id": obj.column_id, "text": obj.col_comments, data:{column_yn:"Y"}, "icon" : "{% static 'assets/images/jstree2.png' %}" }
+			    	   								  , "last"    	   								  
+			    	   								  , false
+			    	   								  , false
+			    	   							);	
+
+									       	})
+										});										    	   
+			       }
+				   , error		: function(request,status,error) {alert("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error);}
+				   , beforeSend	: function() {}
+				   , complete	: function() {}
+			});	
+
+		}
+
+	  	if( data_type == 1 )
+	  	{
+		        $.ajax({ 
+		    	      type: "POST", 
+		    	      url: "{% url 'ajaxMetaDataDetail' %}",
+		    	      data: { 'column_id':table_id,'data_type':data_type, 'csrfmiddlewaretoken': '{{ csrf_token }}'},
+		    	      dataType: "json", 
+		    		"success": function(json) {
+
+		    	        
+		    	        $('#column_detail').show();	
+		    	        $('#tabs_view').show();			
+		    	        $("#col_comments").html(json.dataset.col_comments);
+		    	        document.getElementById("input_col_comments").value = json.dataset.col_comments;
+		    	        $("#domain_name").html(json.dataset.domain_name);
+		    	        $("#it_manager_name").html(json.ds_emp.EMP_NM);
+		    	        $("#it_manager_team").html(json.ds_emp.NAME);
+		    	        $("#it_manager_tel").html(json.ds_emp.MOBILE);
+		    	        $("#it_manager_mail").html(json.ds_emp.SUB_MAIL);
+		    	        $("#column_explain").html(json.dataset.column_explain.replace(/(?:\r\n|\r|\n)/g, '<br>'));
+		    	        $("#db_use").html(json.dataset.db_use);
+		    	        $("#comments").html(json.dataset.comments);
+		    	        $("#table_name").html(json.dataset.table_name);
+		    	        $("#col_comments2").html(json.dataset.col_comments);
+		    	        $("#column_name").html(json.dataset.column_name);
+		    	        document.getElementById("sql_id").value = json.dataset.id;	          
+    	                document.getElementById("data_type").value = json.dataset.data_type;	          
+
+                        if ( json['dataset2'] != "" )
+                        {
+                        
+                	        var tableHeaders='';
+                	        $.each(json.columnNames2, function(i, val){
+                	            tableHeaders += "<th>" + val + "</th>";
+                	        });    
+
+                	    
+                	        $("#tableDiv").empty();  
+                	        
+                	        $("#tableDiv").append('<table width=100% id="datatable-default2" class="data_table2 table table-bordered table-striped mb-none csort"><thead>' + tableHeaders + '</thead></table>');
+                	        
+                	        
+                	        schemaDataTable_0 = $('#datatable-default2').DataTable({
+                	            responsive: true,
+                	            "scrollX": true,            
+                		        "scrollCollapse": true,
+                	            "pageLength": 10,
+                	            "order": [],
+                	            "bFilter": true,            
+                	            paging: true,
+                	            data: json['dataset2']		           
+                		          
+                		        });  
+                	    }
+                	    else
+                	    {
+                	    	$("#tableDiv").empty();  
+                	    }
+
+
+		    	        editor.setValue(json.dataset.sql_text); 
+		    	    },           
+		        });
+			
+		}
+   	})  
+</script>
+
+<script type="text/javascript">
+// let schemaDataTable_0;
+let schemaDataTable = {};
+ jstreeIdArray.map(key => {
+$('#dynamicJstree_'+ key).on("select_node.jstree", function (e, data) {
+  	var data_type = 0
+  	var column_id = data.node.id;
+
+	
+  	if ( data.node.data.column_yn == "Y" )
+  	{
+	    $.ajax({ 
+		      type: "POST", 
+		      url: "{% url 'ajaxMetaDataDetail' %}",
+		      data: { 'column_id':column_id,'data_type':data_type, 'csrfmiddlewaretoken': '{{ csrf_token }}'},
+		      dataType: "json", 
+			"success": function(json) {
+
+		        $('#column_detail').show();	
+		        $('#tabs_view').show();			
+		        $("#col_comments").html(json.dataset.col_comments);
+		        
+		        document.getElementById("input_col_comments").value = json.dataset.col_comments;
+		        $("#domain_name").html(json.dataset.domain_name);
+		        $("#it_manager_name").html(json.ds_emp.EMP_NM);
+    	        $("#it_manager_team").html(json.ds_emp.NAME);
+    	        $("#it_manager_tel").html(json.ds_emp.MOBILE);
+    	        $("#it_manager_mail").html(json.ds_emp.SUB_MAIL);
+		        $("#column_explain").html(json.dataset.column_explain.replace(/(?:\r\n|\r|\n)/g, '<br>'));
+		        $("#db_use").html(json.dataset.db_use);
+		        $("#comments").html(json.dataset.comments);
+		        $("#table_name").html(json.dataset.table_name);
+		        $("#col_comments2").html(json.dataset.col_comments);
+		        $("#column_name").html(json.dataset.column_name);	          
+
+		        document.getElementById("sql_id").value = json.dataset.id;	          
+                document.getElementById("data_type").value = json.dataset.data_type;	          
+
+                if ( json['dataset2'] != "" )
+                {
+                
+        	        var tableHeaders='';
+        	        $.each(json.columnNames2, function(i, val){
+        	            tableHeaders += "<th>" + val + "</th>";
+        	        });    
+
+        	    
+        	        $("#tableDiv").empty();  
+        	        
+        	        $("#tableDiv").append('<table width=100% id="datatable-default2" class="data_table2 table table-bordered table-striped mb-none csort"><thead>' + tableHeaders + '</thead></table>');
+        	        
+        	        
+        	        const localDataTable = $('#datatable-default2').DataTable({
+        	            responsive: true,
+        	            "scrollX": true,            
+        		        "scrollCollapse": true,
+        	            "pageLength": 10,
+        	            "order": [],
+        	            "bFilter": true,            
+        	            paging: true,
+        	            data: json['dataset2']		           
+        		          
+        		        }); 
+        		    schemaDataTable[key] = localDataTable;
+        		    editor.setValue(json.dataset.sql_text);  
+        	    }
+        	    else
+        	    {
+        	    	$("#tableDiv").empty();  
+        	    }
+
+		        
+		       
+		    },           
+	    });
+	}
+	
+  });
+  
+});
+  
+</script>
+
+
+
+<script>
+	$('.tabs a').click(function (e) {
+            // e.stopImmediatePropagation();
+            $(this).tab('show');
+            console.log(schemaDataTable);
+            for(const key in schemaDataTable){
+            	schemaDataTable[key].columns.adjust().draw();
+            }
+
+            schemaDataTable_0.columns.adjust().draw();
+   
+            // schemaDataTable_0.columns.adjust().draw();
+            // schemaDataTable_1.columns.adjust().draw();
+            // schemaDataTable_2.columns.adjust().draw();
+            
+            // var tableWidth = "100%";  
+            // $('.dataTables_scrollHeadInner').css("width", tableWidth); 
+            // $('.data_table2').css("width", tableWidth); 
+            // $('#datatable-default2').removeAttr('style').css("width", tableWidth);    
+
+        });
+</script>
+
+<script>
+			var config, editor;
+
+		    config = {
+		        lineNumbers:true,
+		        // value: "function myScript(){return 100;}\n",
+				mode:  "text/x-sql",
+				theme: "base16-light",				
+				// viewportMargin: 50,
+				smartIndent: true,
+				lineWrapping: true,				
+		    };
+
+		    editor = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_code1"), config);
+
+		    editor.setSize("100%",250);
+		    
+
+</script>
+
+
+
+{%endblock%}
+
+
+
+
+
+

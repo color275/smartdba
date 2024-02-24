@@ -1,0 +1,125 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>DBA Work</h2>
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+		
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}
+
+	<div id="obj_priv" style="display: none">
+		{% for obj in obj_priv %}{{obj.id}},{% endfor %}
+	</div>
+	<div id="user_acc" style="display: none">
+		{% for obj in user_acc %}{{obj.id}},{% endfor %}
+	</div>
+	
+	<section role="main" >
+		<header class="page-header">
+			<h2>DBA Work </h2>		
+		</header>
+
+		<!-- start: page -->
+		<div class="row">
+			<div>
+				<section class="panel">
+					<header class="panel-heading">					
+						<h2 class="panel-title">반영 건</h2>
+					</header>
+					<div class="panel-body">
+						<table class="table table-bordered table-striped mb-none csort" id="datatable-default" data-plugin-options='{"searchPlaceholder": "결과 내 검색"}'>
+						    <thead>
+						        <tr>
+						            <th style="text-align: center;">요청번호</th>
+						            <th style="text-align: center;">DB명</th>
+						            <th style="text-align: center;">제목</th>
+						            <th style="text-align: center;">상태</th>
+						            <th style="text-align: center;">요청자</th>
+						            <th style="text-align: center;">요청일자</th>
+						        </tr>
+						    </thead>
+						    <tbody>
+						        {% for data in req_meta %}
+						            <tr>
+						                <td style="text-align: center;">{{data.REQ_NO}}</td>
+						                <td style="text-align: center;">{{data.DB_NM}}</td>
+						                <td><a href="{% url 'MetaDV' data.REQ_NO %}">{{data.REQ_EXPLAIN|truncatechars:50}}</a></td>
+						                <td style="text-align: center;">{{data.PROCSS_STATUS}}</td>
+						                <td style="text-align: center;">{{data.REQ_USER}}</td>
+						                <td style="text-align: center;">{{data.REQ_DT}}</td>
+						            </tr>
+						        {% endfor %}
+						    </tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+		</div>
+	</section>
+
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+    
+</script>
+
+{%endblock%}

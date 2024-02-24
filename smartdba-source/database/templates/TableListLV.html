@@ -1,0 +1,556 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load humanize %}
+{% load database_extras %}
+
+
+
+{% block title %}Smart-테이블{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>테이블 리스트</h2>
+	<div class="right-wrapper pull-right">
+		<ol class="breadcrumbs">
+			<li>
+				{% if user.is_superuser %}
+					<a href="http://{{ request.get_host }}/admin/database/tablelist/" target="blank">
+						<button type="button" class="btn btn-xs btn-success">Admin</button>
+					</a>
+				{% endif %}
+			</li>
+		</ol>&nbsp;&nbsp;&nbsp;&nbsp;
+	</div>
+
+	<style type="text/css">
+		
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+		.td_fix_center {
+        	white-space: nowrap;
+        	text-align: center;
+        	vertical-align: middle;        	
+        }
+
+
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form id="tablelist" method="POST" action="#"  >
+
+	{% csrf_token %}
+
+
+
+	<header class="panel-heading" style="padding-bottom: 3px">
+
+					<div class="form-group">
+
+						<div class="input-group">
+							<div class="ui-widget">
+							{{form.table_name}}
+							</div>
+
+							<span class="input-group-btn">
+								<button type="submit" class="btn btn-lg btn-primary" id="search_button" >Search</button>
+							</span>
+						</div>
+
+					</div>
+
+
+					<div class="pull-right">
+						<div class="form-inline">
+							{{form.oper_cd}}
+							{{form.id_dblist}}
+							{{form.owner}}
+							{{form.choice_option}}
+							{{form.choice_tab_or_col}}
+							{{ form.media }}
+						</div>
+					</div>
+					<br><br>
+					<!-- <div class="pull-right">
+						<div class="form-inline">
+
+							<label for="chk0"><input  type="checkbox" checked id="chk0" class="toggle-vis" data-column="0">#</label>&nbsp;
+							{% for data in header %}
+								<label for="chk{{forloop.counter}}"><input  type="checkbox" checked id="chk{{forloop.counter}}" class="toggle-vis" data-column="{{forloop.counter}}">{{data}}</label>&nbsp;
+							{% endfor %}
+						</div>
+					</div>
+					<br><br> -->
+
+
+	</header>
+	<br>
+
+
+	<code><b>배치시간 : {{objects.0.mod_dtm}}</b></code>
+	<div class="pull-right">
+	<b>* DML 권한 신청 : ORACLE 운영 환경만 신청 가능하며 그 외 DB는 개인 사용자에게 CRUD가 부여되어 있음</b>
+	</div>
+	<section class="panel">
+
+		<b><div class="text-danger" id="err_msg"></div></b>
+		<div class="panel-body">
+
+			<table class="table table-bordered table-striped mb-none" id="datatable-default" style="width: 100%">
+				<thead>
+					<tr>
+						<th style="text-align: center;vertical-align: middle;">#</th>
+						{% for data in header %}
+							<th style="text-align: center;vertical-align: middle;">{{data|safe}}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for data in objects %}
+						{% if request.session.choice_tab_or_col == "2" %}
+							<tr >
+							    <td style="text-align: center;">{{ forloop.counter0|add:page_obj.start_index }}</td>
+								<td>{{data.id_dblist.db_use}}</td>
+								<td>{{data.oper_cd}}</td>
+								<td>{{data.owner}}</td>
+								<td>{{data.table_name|default_if_none:"--"}}</td>
+								<td style="text-align: center;">{{data.id_tablelist.comments|default_if_none:"--"}}</td>
+								<td>{{data.column_name|default_if_none:"--"}}</td>
+								<td style="text-align: center;">{{data.col_comments|default_if_none:"--"|truncatechars:20}}</td>
+								<td  style="text-align: center;">{{data.data_type|default_if_none:"--"}}</td>
+								<td  style="text-align: center;">{{data.get_pk_yn_display}}</td>
+								<td  style="text-align: center;">{%if data.secu_yn == "1" %}
+										<font color="red"><b>{{data.get_secu_yn_display}}</b></font>
+									{% else %}
+										{{data.get_secu_yn_display}}
+									{% endif %}</td>
+							</tr>
+						{% else %}
+							<tr >
+							    <td style="text-align: center;">{{ forloop.counter0|add:page_obj.start_index }}</td>
+								<td>{{data.id_dblist.db_use}}</td>
+								<td>{{data.oper_cd}}</td>
+								<td>{{data.id_domain|default_if_none:"--"}}</td>
+								<td>{{data.owner}}</td>
+								<td><a id="btn_column_list" href="#btn_column_list_modal" class="modal-with-form" onclick="table_click('{{data.id}}')">{{data.table_name|default_if_none:"--"}}</a>
+								<td style="text-align: center;">{{data.comments|default_if_none:"--"|truncatechars:20}}</td>
+								<td style="text-align: center;">{%if data.cdc_yn == "1" %}
+										<font color="red"><b>{{data.get_cdc_yn_display}}</b></font> {% if data.table_name in "ORD_ORD_M ORD_ITEM_D ORD_ITEM_ENLAG_D" %} (내부){% endif %}									
+									{% endif %}
+								</td>
+								<td style="text-align: center;">{%if data.secu_yn == "1" %}
+										<font color="red"><b>{{data.get_secu_yn_display}}</b></font>									
+									{% endif %}
+								</td>
+								<td>{{data.tablespace_name|default_if_none:"--"}}</td>
+								<td style="text-align: center;">{{data.total_mb|intcomma}} + {{data.lob_mb|intcomma}}</td>
+								<td>{% get_it_manager data.id_dblist data.id_domain as result %} {{result|truncatechars:15}}</td>
+								<td>{% get_dev_manager data.id_dblist data.id_domain as result %} {{result|truncatechars:15}}</td>
+								<td style="text-align: center;"><b>{% get_crud request.user.id data.id_dblist.id data.oper_cd.id data.owner data.table_name as result %} {{result}}</b></td>
+								<td style="text-align: center;">
+								<!-- data.oper_cd.id == 1 : ORACLE 만 권한 신청 -->
+								{% if data.oper_cd.id == 3 %}
+									{% if data.id in my_privs_list %}
+											<a class="btn-xs btn-warning" href="#">신청중</a>
+									{% else %}
+										{% if data.id_dblist.id_dbtype.db_type == "ORACLE" %}
+											<a id="btn_priv" class="modal-with-form btn-xs btn-success" href="#btn_priv_modal" onclick="send_to_modal('{{data.id}}','{{data.id_dblist.id}}','{{data.table_name}}')">신청</a>
+										{%endif%}
+									{% endif %}
+								{% endif %}
+								</td>
+								{% if user.is_superuser %}
+								<td><a href="http://{{ request.get_host }}/admin/database/tablelist/{{data.id}}/change/" target="blank">변경</a></td>
+								{% endif %}
+							</tr>
+						{% endif %}
+					{% endfor %}
+				</tbody>
+			</table>
+
+			<div id="btn_column_list_modal" class="modal-block modal-block-full mfp-hide">
+				<section class="panel">
+					<header class="panel-heading">
+						<h1 class="panel-title"><div id="table_name_column_list"></div></h1>
+					</header>
+							
+					<div class="panel-body">
+						<div id="div_column_list"></div>
+					</div>
+					<footer class="panel-footer">
+						<div class="row">
+							<div class="col-md-12 text-right">
+								<button id="btn_aceept_no" class="btn btn-default modal-dismiss">닫기</button>
+							</div>
+						</div>
+					</footer>
+				</section>
+			</div>
+
+			{{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+			<div class="pull-right">
+				{% if is_paginated %}
+				  <nav>
+				    <ul class="pagination">
+				      {% if page_obj.has_previous %}
+				        <li>
+				          <a href="?page={{ page_obj.previous_page_number }}">
+				            <span>Prev</span>
+				          </a>
+				        </li>
+				      {% else %}
+				        <li class="disabled">
+				          <a href="#">
+				            <span>Previous</span>
+				          </a>
+				        </li>
+				      {% endif %}
+
+				      {% for page in page_range %}
+				        <li {% if page == page_obj.number %}class="active"{% endif %}>
+				          <a href="?page={{ page }}">{{ page }}</a>
+				        </li>
+				      {% endfor %}
+
+				      {% if page_obj.has_next %}
+				        <li>
+				          <a href="?page={{ page_obj.next_page_number }}">
+				            <span>Next</span>
+				          </a>
+				        </li>
+				      {% else %}
+				        <li {% if not page_obj.has_next %}class="disabled"{% endif %}>
+				          <a href="#">
+				            <span>Next</span>
+				          </a>
+				        </li>
+				      {% endif %}
+				    </ul>
+				  </nav>
+				{% endif %}
+			</div>
+		</div>
+
+
+	</section>
+
+	<div id="btn_priv_modal" class="modal-block modal-block-primary mfp-hide">
+		<section class="panel">
+			<header class="panel-heading">
+				<h2 class="panel-title">권한 신청 >> <span id="object_name"></span></h2>
+			</header>
+			<form method="POST" action="{% url 'TuningListLV' %}" class="form-horizontal mb-lg" role="form" >
+			<div class="panel-body">
+					<div class="form-group">
+						<label class="col-md-3 control-label">필요한 권한 선택 </label>
+						<div class="col-md-6">
+							<div id="table_id" style="display: none"></div>
+							<div id="id_dblist" style="display: none"></div>
+							<div id="user_id" style="display: none"></div>
+							<select class="form-control" multiple="multiple" data-plugin-multiselect id="req_priv_list" name="req_priv_list">
+								<option value="SELECT">SELECT</option>
+								<option value="UPDATE">UPDATE</option>
+								<option value="DELETE">DELETE</option>
+								<option value="INSERT">INSERT</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">권한 신청 사유</label>
+						<div class="col-sm-9">
+							<textarea rows="5" class="form-control" id = "txt_req_reason" name = "txt_req_reason" placeholder="Type your comment..." ></textarea>
+						</div>
+					</div>
+			</div>
+			<footer class="panel-footer">
+				<div class="row">
+					<div class="col-md-12 text-right">
+						<button id="submitRequest" type="button" class="btn btn-primary">권한신청</button>
+						<button id="submitRequestCancel" name="submitRequestCancel" class="btn btn-default modal-dismiss">취소</button>
+					</div>
+				</div>
+			</footer>
+			</form>
+		</section>
+	</div>
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	function table_click(id_tablelist) {
+
+
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxViewColumnDetail' %}",
+	      data: { 'id_tablelist' : id_tablelist,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	            $("#div_column_list").html('<table width="100%" id="datatable-column" class="table table-bordered table-striped mb-none csort" ><thead><tr><th>#</th><th>컬럼한글명</th><th>PK</th><th>NOT NULL</th><th>Default</th><th>컬럼영문명</th><th>DataType</th><th>개인정보</th></tr></thead></table>')
+
+	            const localDataTable = $('#datatable-column').DataTable({
+				            responsive: true,
+	            			// "scrollCollapse": true,
+	            	        "pageLength": 500,
+	            	        "order": [],
+	            	        "bFilter": true,
+	            	        "paging": true,
+	            	        dom: '<ti>',       
+	            	        buttons: [],
+	            	        "scrollX": true,
+	            	        "scrollY": "600px",
+	            	        "columnDefs": [ 
+	            	         { className: "td_fix_center", "targets": [ 0,1,2,3,4,5,6,7 ] }
+	            	        ],	 
+	            	        data: json.attr_data,
+	            	        "rowCallback": function(row, data){
+
+	            	            if(data[7]=='Y'){
+	            	                $(row).find('td').css('background-color', '#FF6666');
+	            	                $(row).find('td').css('color', 'white');
+
+	            	            }	            	            
+	            	          }
+
+				});
+
+				$("#table_name_column_list").html(json.table_name)
+
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	}
+
+	$(document).ready(function() {
+
+		// $('#datatable-default tfoot th').each( function (i) {
+	 //        var title = $('#datatable-default thead th').eq( $(this).index() ).text();
+	 //        $(this).html( '<input type="text" class="form-control input-sm" placeholder="Search" '+title+'" data-index="'+i+'" />' );
+
+
+	 //    } );
+
+		// var table = $('#datatable-default').DataTable({
+	 //        responsive: true,
+		// 	"scrollCollapse": true,
+	 //        "pageLength": 10,
+	 //        "order": [],
+	 //        "bFilter": true,
+	 //        dom: 'Brt',
+	 //        buttons: [],
+	 //        "scrollX": true,
+	 //        "scrollY": "500px",
+	 //        "columnDefs": [ {
+	 //                   "searchable": false,
+	 //                   "orderable": false,
+	 //                   "targets": 0
+	 //               } ],
+
+	 //    });
+
+
+
+
+
+	 //    $( table.table().container() ).on( 'keyup', 'tfoot input', function () {
+	 //            table
+	 //                .column( $(this).data('index') )
+	 //                .search( this.value )
+	 //                .draw();
+	 //        } );
+
+
+
+	 //    $('input.toggle-vis').on( 'change', function (e) {
+
+	 //            e.preventDefault();
+
+	 //            var column = table.column( $(this).attr('data-column') );
+
+	 //            column.visible( ! column.visible() );
+	 //        } );
+
+
+	});
+
+	$("#submitRequest").click(function(){
+		// #################################################################
+		// ## submitRequest
+		// #################################################################
+
+		console.log("click request")
+
+
+		var req_priv_list = [];
+		    $('#req_priv_list :selected').each(function(i, selected) {
+		        req_priv_list[i] = $(selected).val();
+		    });
+
+
+	  	var req_reason = document.getElementById("txt_req_reason").value;
+	  	var table_id = $("#table_id").html();
+	  	var user_id = $("#user_id").html();
+
+		console.log(req_priv_list)
+		console.log(req_reason)
+		console.log(table_id)
+
+
+	  	if((req_priv_list.length == 0)||(req_reason == ""))
+	  	{
+	  		alert("모든 내용을 입력해주세요");
+	  		return;
+	  	}
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxReqestPriv' %}",
+	      data: { 'req_priv_list' : req_priv_list,
+				  'req_reason' : req_reason,
+				  'table_id' : table_id,
+				  'user_id' : user_id,
+				  'object_type' : 'TABLE',
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+	      	$("#submitRequestCancel").click();
+	      	alert("권한 신청이 완료되었습니다.")
+	      	location.reload();
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+
+	})
+
+	function send_to_modal(table_id, id_dblist, object_name){
+
+		$("#table_id").html(table_id);
+		$("#id_dblist").html(id_dblist);
+		$("#object_name").html(object_name);
+
+	    $.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxCheckTabPriv' %}",
+	      data: { 'table_id' : table_id,
+	      		  'id_dblist': id_dblist,
+	      		  'object_type' : 'TABLE',
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {
+
+	      				console.log(json.err_yn)
+
+
+	      				if ( json.err_yn == "N" )
+	      				{
+		      				priv = ['SELECT']
+		      				$.each(json.priv, function(i, val){
+		      				    console.log(val.privilege)
+		      				    priv[i+1] = val.privilege
+		      				});
+
+		      				var element = document.getElementById('req_priv_list');
+		      				var values = ["SELECT", "INSERT"];
+		      				for (var i = 0; i < element.options.length; i++) {
+		      				    element.options[i].selected = priv.indexOf(element.options[i].value) >= 0;
+		      				}
+
+		      				$("#req_priv_list").multiselect("refresh");
+
+		      				$("#user_id").html(json.user_id);
+
+		      				$("#err_msg").html("")
+		      			}
+		      			else {
+		      				$("#submitRequestCancel").click();
+		      				alert(json.err_msg)
+		      			}
+
+	                },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	}
+
+</script>
+
+
+{%endblock%}
+
+
+
+
+
+

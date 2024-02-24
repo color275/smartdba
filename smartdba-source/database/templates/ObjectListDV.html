@@ -1,0 +1,113 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2 >{{objects.object_name}} 오브젝트 상세 <a href="/database/ObjectListLV/?page={{ request.session.page_number }}"><i class="fa fa-backward" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="뒤로가기"></i></a></h2>
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+		
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+
+	{% csrf_token %}
+
+	
+	<code><b>배치시간 : {{obj_source.0.1}}</b></code>
+	<section class="panel">
+
+
+
+		<div class="panel-body">				
+
+			<pre style="margin-bottom: 0px;"><textarea class="text_sql form-control"  id="codemirror_sql_code" name="text_sql" >{% for obj in obj_source %}{% if forloop.counter0 == 0 %}CREATE OR REPLACE{%endif%} {{obj.0}}{% endfor %}
+			</textarea></pre>
+		</div>
+			
+	</section>
+	<div class="pull-right">
+		<a type="button" class="btn btn-primary" href="/database/ObjectListLV/?page={{ request.session.page_number }}">목록으로</a>
+	</div>
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	$(document).ready(function() {
+   	    config_select = {
+   	        lineNumbers:false,
+   			mode:  "text/x-sql",
+   			theme: "base16-light",
+   			smartIndent: true,
+   			lineWrapping: true,
+   			readOnly: true,
+   	    };
+
+   	    editor_select = CodeMirror.fromTextArea(document.getElementById("codemirror_sql_code"), config_select);
+
+   	    editor_select.setSize("100%","100%");
+
+	});
+    
+</script>
+
+
+
+
+{%endblock%}
+
+
+
+
+

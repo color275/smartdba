@@ -1,0 +1,196 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+    </style>
+</head>
+
+<header class="page-header">
+	<h2 >{{objects.0.table_name}} 테이블 상세 <a href="/database/TableListLV/?page={{ request.session.page_number }}"><i class="fa fa-backward" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="뒤로가기"></i></a></h2>
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+
+		
+	</style>
+
+
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+
+	{% csrf_token %}
+
+	
+	<code><b>배치시간 : {{objects.0.mod_dtm}}</b></code>
+	<section class="panel">
+
+
+
+		<div class="panel-body">				
+			<!-- <table class="table table-bordered table-striped mb-none" id="datatable-details-databaselist"> -->
+			<table class="table table-bordered table-striped mb-none" id="datatable-default" style="width: 100%">
+				<thead>					
+					<tr>
+						<th style="text-align: center;">#</th>
+						{% for data in header %}
+							<th>{{data}}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for data in objects %}
+						<tr >	
+						    <td style="text-align: center;"></td>																				
+							<td>{{data.column_name}}</td>
+							<td>{{data.col_comments|default_if_none:"--"}}</td>
+							<td>{{data.data_type}}</td>							
+							<td style="text-align: center;">{% if data.pk_yn == "1" %} 
+									Y
+								{% endif %}</td>							
+							<td style="text-align: center;">{% if data.secu_yn == "1" %} 
+									<font color="red">존재</font>
+								{% endif %}
+							</td>							
+						</tr>
+					{% endfor %}
+				</tbody>				
+			</table>
+			
+
+
+		</div>
+			
+	</section>
+	<div class="pull-right">
+		<a type="button" class="btn btn-primary" href="/database/TableListLV/?page={{ request.session.page_number }}">목록으로</a>
+	</div>
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+
+
+
+<script type="text/javascript">
+
+	$(document).ready(function() {
+
+		$('#datatable-default tfoot th').each( function (i) {
+	        var title = $('#datatable-default thead th').eq( $(this).index() ).text();
+	        $(this).html( '<input type="text" class="form-control input-sm" placeholder="Search" '+title+'" data-index="'+i+'" />' );
+	        
+
+	    } );
+
+		var table = $('#datatable-default').DataTable({
+	        responsive: true,
+			// "scrollCollapse": true,
+	        "pageLength": 500,
+	        "order": [],
+	        "bFilter": true,
+	        "paging": true,
+	        dom: '<Bfrti>',       
+	        // dom: 'Brt',	       
+	        buttons: [],
+	        // buttons: [
+	        //     {
+	        //     extend: 'excelHtml5',
+	        //     exportOptions: {
+         //            columns: ':visible'
+         //        },
+	        //     filename: "SmartDBA_데이터베이스정보",
+	        //     title: '',
+	        //     className: 'btn btn-success btn-xs'
+	        // },
+	        // ],
+	        "scrollX": true,
+	        // "scrollY": "500px",
+	        "columnDefs": [ {
+	                   "searchable": false,
+	                   "orderable": false,
+	                   "targets": 0
+	               } ],	        
+
+	    });
+
+	    table.on( 'order.dt search.dt', function () {
+	            table.column(0, {search:'applied', order:'applied'}).nodes().each( function (cell, i) {
+	                cell.innerHTML = i+1;
+	            } );
+	        } ).draw();
+
+
+
+	    $( table.table().container() ).on( 'keyup', 'tfoot input', function () {
+	            table
+	                .column( $(this).data('index') )
+	                .search( this.value )
+	                .draw();
+	        } );
+
+
+
+	    $('input.toggle-vis').on( 'change', function (e) {
+
+	            e.preventDefault();
+	     
+	            // Get the column API object
+	            var column = table.column( $(this).attr('data-column') );	            
+	     
+	            // Toggle the visibility
+	            column.visible( ! column.visible() );
+	        } );
+	   	
+
+	});
+    
+</script>
+
+
+
+
+{%endblock%}
+
+
+
+
+

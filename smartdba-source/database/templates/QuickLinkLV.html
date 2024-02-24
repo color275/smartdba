@@ -1,0 +1,174 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load database_extras %}
+
+
+
+{% block title %}Smart-바로가기{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+        th, td { white-space: nowrap; }
+        canvas {
+            display:inline-block;
+        }
+
+        #datatable-default td {
+        	padding-bottom: 2px;
+        	padding-right: 2px;
+        	padding-top: 2px;
+        	padding-left: 2px;
+        	text-align: center;
+        }
+
+
+
+    </style>
+</head>
+
+<header class="page-header">
+	<h2>바로가기<br></h2>
+    <div class="right-wrapper pull-right">
+        <ol class="breadcrumbs">
+            <li>
+                {% if user.is_superuser %}
+                    <a href="http://{{ request.get_host }}/admin" target="blank">
+                        <button type="button" class="btn btn-xs btn-success">Admin</button>
+                    </a>
+                {% endif %}
+            </li>
+        </ol>&nbsp;&nbsp;&nbsp;&nbsp;
+    </div>
+
+
+	<style type="text/css">
+		#datatable-default_filter {
+			width:50%;
+			position:relative;
+		    float: right;
+		}
+	</style>
+
+
+</header>
+
+<!-- start: page -->
+<form id="tablelist" method="POST"   >
+
+	{% csrf_token %}
+
+
+	<section role="main" >
+		<div class="row">
+            {%  for data in menu_list1 %}
+
+                <div class="col-md-6 col-lg-6 col-xl-4">
+                    <section class="panel-w panel-featured-left panel-featured-primary">
+                        <div class="panel-body">
+                            <div class="widget-summary widget-summary-sm">
+                                <div class="widget-summary-col widget-summary-col-icon">
+                                    <div class="summary-icon bg-primary">
+                                        <i class="fa fa-external-link"></i>
+                                    </div>
+                                </div>
+                                <div class="widget-summary-col">
+                                    <div class="summary">
+                                        <div class="">
+                                            <strong class="amount"><a href="{% url data.url %}">{{ data.menu_name }}</a></strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                {% if forloop.counter|divisibleby:3 %}
+                    </div>
+                    <br>
+                    <div class="row">
+                {%  endif %}
+            {% endfor %}
+        </div>
+    </section>
+    <br><br>
+    <section role="main" >
+		<div class="row">
+            {%  for data in menu_list2 %}
+                <div class="col-md-6 col-lg-6 col-xl-2">
+                    <section class="panel-w panel-featured-left panel-featured-primary">
+                        <div class="panel-body">
+                            <div class="widget-summary widget-summary-sm">
+                                <div class="widget-summary-col widget-summary-col-icon">
+                                    <div class="summary-icon bg-primary">
+                                        <i class="fa fa-external-link"></i>
+                                    </div>
+                                </div>
+                                <div class="widget-summary-col">
+                                    <div class="summary">
+                                        <div class="">
+                                            <strong class=""><a href="{% url data.url %}">{{ data.menu_name }}</a></strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                {% if forloop.counter|divisibleby:6 %}
+                    </div>
+                    <BR>
+                    <div class="row">
+                {%  endif %}
+            {% endfor %}
+        </div>
+    </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</form>
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+
+<script src="{% static 'custom/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'custom/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'custom/js/jszip.min.js' %}"></script>
+<script src="{% static 'custom/js/buttons.html5.min.js' %}"></script>
+
+
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/magnific-popup/magnific-popup.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-placeholder/jquery.placeholder.js' %}"></script>
+
+
+<script src="{% static 'custom/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'custom/js/Chart.min.js' %}"></script>
+
+
+{%endblock%}
+
+
+

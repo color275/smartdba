@@ -1,0 +1,309 @@
+
+
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load database_extras %}
+
+
+{% block title %}Smart-T변경{% endblock %}
+
+
+{%block content %}
+
+
+<head>
+    <style type="text/css">
+      .td_fix_center {
+        white-space: nowrap;
+        text-align: center;
+        vertical-align: middle;         
+      }
+      .td_fix {
+        white-space: nowrap;
+        vertical-align: middle;         
+      }
+    </style>
+</head>
+
+<header class="page-header">
+    <h2>테이블 변경 신청 (Table, Index, Procedure, 권한... ) </h2>
+    <div class="right-wrapper pull-right">
+      <ol class="breadcrumbs">
+        <li>          
+          {% if user.is_superuser %}
+            <!-- <a href="http://{{ request.get_host }}/admin/database/weekdba/" target="blank">&nbsp;
+              <button type="button" class="btn btn-xs btn-success">정기반영 신청 Freezing</button>
+            </a> -->
+            <a href="http://{{ request.get_host }}/admin/database/metareqweekday/" target="blank">&nbsp;
+              <button type="button" class="btn btn-xs btn-success">정기반영 세팅</button>
+            </a>
+            <a href="http://{{ request.get_host }}/admin/database/metareq/" target="blank">&nbsp;
+              <button type="button" class="btn btn-xs btn-success">Admin</button>
+            </a>
+          {% endif %}
+        </li>
+      </ol>&nbsp;&nbsp;&nbsp;&nbsp;
+    </div>
+</header>
+
+
+<!-- start: page -->
+    <div class="alert alert-info">
+      <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+      <strong>테이블, 인덱스, 프로시저 등의 DB 오브젝트와 그 외 권한 DB 형상 변경 신청을 하는 곳입니다.<br>
+        <font color="red">신규 프로젝트나 패널 등에 의해 4개 이상의 테이블이 신규 생성</font>되는 경우에는 <font color="red">논리모델</font> 설계 먼저 진행해주세요. <a href="https://wiki.gsenext.com/pages/viewpage.action?pageId=30133257" target="blank">[도움말]</a>
+      </strong>
+    </div>
+
+    <a id="btn_sql" class="btn_sql mb-xs mt-xs mr-xs btn btn-sm btn-default" href="{% url 'MetaReqListCV' %}" > <i class="fa fa-youtube-play"></i> 변경관리 요청하기</a>    
+    <form method="POST" action="#"  >
+
+    {% csrf_token %}
+
+
+    <section class="panel">
+        <header class="panel-heading" style="padding-bottom: 3px">
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="ui-widget">
+                  {{form.title}}
+                  </div>
+                  <span class="input-group-btn">
+                    <button type="submit" class="btn btn-lg btn-default" name="search_button" value="search_button" >Search</button>
+                  </span>
+                </div>
+              </div>
+              <div class="pull-right">
+                <div class="form-inline">
+
+                    {% if request.session.search_my_req %}
+                      <button type="submit" class="btn btn-xs btn-warning" name="search_my_req" value="search_my_req">나의 신청 보기(선택됨)</button>
+                    {% else %}
+                      <button type="submit" class="btn btn-xs btn-default" name="search_my_req" value="search_my_req">나의 신청 보기</button>
+                    {% endif %}
+
+                    {% if request.session.search_my_accept %}
+                      <button type="submit" class="btn btn-xs btn-warning" name="search_my_accept" value="search_my_accept">나의 승인 보기(선택됨)</button>
+                    {% else %}
+                      <button type="submit" class="btn btn-xs btn-default" name="search_my_accept" value="search_my_accept">나의 승인 보기</button>
+                    {% endif %}
+
+
+                    {% if request.user.is_superuser %}
+                      <button type="submit" class="btn btn-xs btn-default" name="search_week_req" value="search_week_req">금주 정기반영 대상 보기</button>
+                      <a href="{% url 'MetaScriptDownload' %}" class="btn btn-xs btn-default" {%if prod_exec_count == 0 %} onclick = "return false;" data-toggle="tooltip" data-placement="top" title="금주 정기 반영으로 지정된 대상이 없습니다" {%endif%} >정기반영Script</a>
+                    {% endif %}
+
+                    {{form.choice_status}}
+                    {{form.media}}
+                </div>
+              </div>
+              <br><br>
+        </header>
+        <div class="panel-body" style="width:100%">
+          {% if user.is_superuser and email != "" %}
+            {{email}}
+            <br>
+            <br>
+            {{email_contents|safe|linebreaks}}
+            {{add_secu_msg|safe}}<br>
+            {% if domain_of_new_table %}
+              <b><font color=blue># 금주 모델 현행화가 필요한 도메인</font></b><br>
+              {% for erd in domain_of_new_table %}
+                <li>{{erd}}</li>
+              {% endfor %}
+              <br>
+            {% endif %}
+          {% endif %}
+          {% if request.session.title != "" and request.session.title != None %}
+          <b><i><font color="blue">"{{request.session.title}}"</font> 검색어로 필터되었습니다</i></b>
+          {% endif %}
+            <table class="table table-bordered table-striped mb-none csort" id="datatable-default" data-plugin-options='{"searchPlaceholder": "결과 내 검색"}'>
+                <thead>
+                    <tr>
+                        <th class="td_fix_center">#</th>
+                        <th class="td_fix_center">진행상태</th>
+                        <th class="td_fix_center">DB용도</th>
+                        <th class="td_fix_center">오브젝트</th>
+                        <th class="td_fix_center">유형</th>
+                        <th class="td_fix_center">테이블(영문)명</th>
+                        <th class="td_fix_center">테이블(한글)명</th>
+                        <th class="td_fix_center">동기화<br>CDC</th>
+                        <th class="td_fix_center">개인정보<br>추가</th>
+                        <th class="td_fix_center">등록<br>일자</th>
+                        <th class="td_fix_center">운영배포<br>일자</th>
+                        <th class="td_fix_center">완료<br>일자</th>
+                        <th class="td_fix_center">등록</th>
+                        <th class="td_fix_center">승인</th>
+                        <th class="td_fix_center">DBA</th>
+                        <!-- <th style="text-align: center;vertical-align: middle;" data-toggle="tooltip" data-placement="top" title="개발반영 완료">1</th>
+                        <th style="text-align: center;vertical-align: middle;" data-toggle="tooltip" data-placement="top" title="운영반영 요청 완료">2</th>
+                        <th style="text-align: center;vertical-align: middle;" data-toggle="tooltip" data-placement="top" title="운영반영 완료">3</th> -->
+                    </tr>
+                </thead>
+                <tbody>
+
+                    {% for data in objects %}
+                        {% if data.pl_prod_yn == "1" and data.dba_prod_yn == "0" %}
+                        <tr style="background-color:#c8ebf5">
+                        {% else %}
+                        <tr>
+                        {% endif %}
+                            <td class="td_fix_center" style="">{{data.id}}</td>
+
+                            {% if data.check_prod_exec_yn == "1" %}
+                              <td class="td_fix_center" style="" bgcolor="#9CF1C0">
+                              {% if data.dba_prod_yn == "1" %}
+                              <b><font color="blue">정기 반영 - 완료됨</font></b>
+                              {% elif data.dba_prod_yn == "2" %}
+                              <b><font color="red">정기 반영 - <font color="red">반려됨</font></font></b>
+                              {% else %}
+                              <b>정기 반영</b>
+                              {% endif %}
+                            {% else %}
+                              <td class="td_fix_center" style="">
+
+                              {% if data.dba_prod_yn == "1" %}
+                                운영 완료
+                              {% elif data.pl_dev_yn == "2" or data.da_dev_yn == "2" or data.dba_dev_yn == "2" or data.pl_prod_yn == "2" or data.dba_prod_yn == "2" %}
+                                <font color="red">반려</font>
+                              {% elif data.pl_prod_yn == "1" and data.dba_prod_yn == "0" %}
+                                <b>운영 반영 예정</b>
+                              {% elif data.req_prod_yn == "1" and data.pl_prod_yn == "0" %}
+                                PL 승인 대기
+                              {% elif data.dba_dev_yn == "1" and data.req_prod_yn == "0" %}
+                                개발 완료<!-- 운영 요청 대기 -->
+                              {% elif  data.da_dev_yn == "1" and data.dba_dev_yn == "0" %}
+                                <font color="blue"><b>개발 반영 예정</b></font>
+                              {% elif data.pl_dev_yn == "1" and data.da_dev_yn == "0" %}
+                                <font color="blue"><b>개발 반영 예정</b></font>
+                              {% elif data.pl_dev_yn == "0" and data.da_dev_yn == "0" %}
+                                <font color="blue"><b>개발 반영 예정</b></font>
+                              {% endif %}
+
+                            {% endif %}
+
+
+                            </td>
+                            <td class="td_fix_center" style="">{{data.id_dblist.db_use}}</td>
+                            <td class="td_fix_center" style="">{{data.get_obj_class_display}}</td>
+                            <td class="td_fix_center" style="">{{data.get_obj_new_display}}</td>
+                            <td class="td_fix" data-toggle="tooltip" data-placement="top"><a href="{% url 'MetaReqListLV' data.id %}">{% if data.id_tablelist %} {{data.id_tablelist.table_name}} {% elif data.table_name != "" %} {{data.table_name|default_if_none:data.title}} {% else %} {{data.title|truncatechars:25}} {% endif %}</a></td>
+                            <td class="td_fix" data-toggle="tooltip" data-placement="top"><a href="{% url 'MetaReqListLV' data.id %}">{% if data.id_tablelist %} {{data.id_tablelist.comments|default_if_none:"--"|truncatechars:25}} {% elif data.table_name != "" %} {{data.table_comments|default_if_none:"--"|truncatechars:25}} {% else %} -- {% endif %}</a></td>
+                            <td class="td_fix_center" style="">{% if data.id_tablelist.cdc_yn == "1" %}<font color="red"><b>{{data.id_tablelist.get_cdc_yn_display}}</b></font>{% endif %}</td>
+                            <td class="td_fix_center" style=""><font color="red"><b>{% get_add_privacy_yn data.id as result %} {{result}}</b></font></td>
+                            <!-- <td data-toggle="tooltip" data-placement="top" title="{{data.title}}"><a href="{% url 'MetaReqListLV' data.id %}">{{data.title}}</a></td>                             -->
+                            <td class="td_fix_center" style="">{{data.reg_dtm|date:"m/d"}}</td>
+                            <td class="td_fix_center" style="">{{data.dist_dtm|date:"m/d H:i"}}</td>
+                            <td class="td_fix_center" style="">{% if data.dba_prod_yn == "1" %}{{data.dba_prod_dtm|date:"m/d"}}{% endif %}</td>
+                            <td class="td_fix_center" style="" data-toggle="tooltip" data-placement="top" title="{{data.id_reg_user}}">{{data.id_reg_user.first_name|truncatechars:6}}</td>
+                            <td class="td_fix_center" style="" data-toggle="tooltip" data-placement="top" title="{{data.id_pl_prod}}">{{data.id_pl_prod.first_name|truncatechars:6}}</td>
+                            <td class="td_fix_center" style="" data-toggle="tooltip" data-placement="top" title="{{data.id_pl_prod}}">{% if data.id_dba_prod is None %} {{data.id_dba_dev.first_name|truncatechars:6}} {% else %} {{data.id_dba_prod.first_name|truncatechars:6}} {% endif %}</td>
+                            <!-- {% if data.dba_dev_yn == "1" %}
+                                <td style="text-align: center;" bgcolor="#CCCCFF"></td>
+                            {% elif data.pl_dev_yn == "2" or data.da_dev_yn == "2" or data.dba_dev_yn == "2" %}
+                                <td style="text-align: center;" bgcolor="#FF6666"><font color="white"><b>반려</b></font></td>
+                            {% else %}
+                                <td style="text-align: center;"></td>
+                            {% endif %}
+                            {% if data.req_prod_yn == "1" %}
+                                <td style="text-align: center;" bgcolor="#9999FF"></td>
+                            {% else %}
+                                <td style="text-align: center;"></td>
+                            {% endif %}
+                            {% if data.dba_prod_yn == "1" %}
+                                <td style="text-align: center;" bgcolor="#6666FF"></td>
+                            {% elif data.pl_prod_yn == "2" or data.dba_prod_yn == "2" %}
+                                <td style="text-align: center;" bgcolor="#FF6666"><font color="white"><b>반려</b></font></td>
+                            {% else %}
+                                <td style="text-align: center;"></td>
+                            {% endif %} -->
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+            <div class="pull-right">
+              {% if is_paginated %}
+                <nav>
+                  <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                      <li>
+                        <a href="?page={{ page_obj.previous_page_number }}">
+                          <span>Prev</span>
+                        </a>
+                      </li>
+                    {% else %}
+                      <li class="disabled">
+                        <a href="#">
+                          <span>Previous</span>
+                        </a>
+                      </li>
+                    {% endif %}
+
+                    {% for page in page_range %}
+                      <li {% if page == page_obj.number %}class="active"{% endif %}>
+                        <a href="?page={{ page }}">{{ page }}</a>
+                      </li>
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                      <li>
+                        <a href="?page={{ page_obj.next_page_number }}">
+                          <span>Next</span>
+                        </a>
+                      </li>
+                    {% else %}
+                      <li {% if not page_obj.has_next %}class="disabled"{% endif %}>
+                        <a href="#">
+                          <span>Next</span>
+                        </a>
+                      </li>
+                    {% endif %}
+                  </ul>
+                </nav>
+              {% endif %}
+                  </div>
+            </div>
+
+
+
+    </div>
+    </section>
+
+
+<!-- end: page -->
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'assets/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js' %}"></script>
+<script src="{% static 'custom/js/cookie.js' %}"></script>
+
+
+
+
+
+<script>
+    $('#datatable-default').DataTable({
+            responsive: true,
+            // "pageLength": 50,
+            "order": false,
+            "dom" : 'Brt',
+            "bFilter": true,
+            "paging": true,
+        });
+</script>
+
+
+
+
+{%endblock%}
+
+
+

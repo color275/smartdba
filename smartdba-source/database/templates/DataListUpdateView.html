@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load widget_tweaks %}
+<!-- {% load crispy_forms_tags %} -->
+
+{% block title %}SmartDBA{% endblock %}
+
+{%block content %}
+
+<head>
+	 <style type="text/css">
+	 	.field-label {
+	 	    font-weight: normal;
+	 	}
+	 	.field-helptext {
+	 	    font-size: 12px;
+	 	}
+	 	.field-error {
+	 	    font-size: 14px;
+	 	    color: red;
+	 	}
+	 	.field-required {
+	 	    font-weight: bold;
+	 	}
+	 	.field-required:after {
+	 	    content: " *";
+        color: red;
+	 	}
+	 </style>
+
+</head>
+
+<form 
+      method="POST" 
+      action="{% url 'DataListUpdateView' datalist.id %}">
+{%csrf_token%}
+<header class="page-header">
+	<h2>데이터 수정</h2>
+</header>
+<div class="container">
+	
+{% for field in form %}   
+    <div class="row">
+
+       <div class="col-md-2">            
+        <label class="field-label{% if field.field.required  %} field-required{%endif%} text-primary" for="{{ field.name }}">{{ field.label }}</label>        
+        {% if field.help_text %}
+          <br><sup>{{ field.help_text|safe }}</sup>
+          <br><br>
+        {% endif %}
+        <font color=red><b>{{ field.errors }}</b></font>
+       </div>
+	   {% if field.label in '개인정보유무,실시간or분석,노출여부,업무도메인명' %}
+       <div class="col-md-1 pull-left">         
+       {% else %}
+       <div class="col-md-8 pull-left">         
+       {% endif %}
+         {% if field.label in '요청자 (복수 선택 가능),수정자 (복수 선택 가능),DB용도' %}
+         	{{ field }}         	
+         	<br><br>
+         {% else %}
+         	{{ field | attr:"class:form-control"}}
+         	<br>
+         {% endif %}
+
+       </div>
+    </div>
+ {% endfor %}
+<button type="submit" class="btn btn-primary">수정 완료</button>
+<a type="button" href="{% url 'dataView' %}" class="btn btn-primary">목록으로</a>
+		 
+
+{{ form.media }}
+
+<!-- </div> -->
+
+</form>
+
+<link href="{% static 'custom/css/summernote.min.css' %}" rel="stylesheet">
+<script src="{% static 'custom/js/summernote.min.js' %}"></script>
+
+<script type="text/javascript">
+$(document).ready(function() {
+  $('#id_data_explain').summernote({
+    height: 400,
+  });
+
+  config_select = {
+      lineNumbers:false,
+  mode:  "text/x-sql",
+  theme: "base16-light",
+  smartIndent: true,
+  lineWrapping: true,
+  };
+
+  editor_select = CodeMirror.fromTextArea(document.getElementById("id_sql_text"), config_select);
+
+  editor_select.setSize("100%","100%");
+});
+
+</script>
+
+
+{%endblock%}
+
+
+
+
+
+

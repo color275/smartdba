@@ -1,0 +1,141 @@
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load widget_tweaks %}
+<!-- {% load crispy_forms_tags %} -->
+
+{% block title %}SmartDBA{% endblock %}
+
+{%block content %}
+
+<head>
+   <style type="text/css">
+    .field-label {
+        font-weight: normal;
+    }
+    .field-helptext {
+        font-size: 12px;
+    }
+    .field-error {
+        font-size: 14px;
+        color: red;
+    }
+    .field-required {
+        font-weight: bold;
+
+    }
+    .field-required:after {
+        content: " *";
+        color: red;
+    }
+   </style>
+
+</head>
+
+
+<form method="POST" action="#" >
+{%csrf_token%}
+<header class="page-header">
+  <h2>데이터 신청 - 수정</h2>
+  <div class="right-wrapper pull-right">
+      <ol class="breadcrumbs">
+        <li>
+          {% if user.is_superuser %}          
+            <a href="http://{{ request.get_host }}/admin/database/datarequest/{{objects.id}}/change/" target="blank">&nbsp;
+              <button type="button" class="btn btn-xs btn-success">Admin</button>
+            </a>
+          {% endif %}
+        </li>
+      </ol>&nbsp;&nbsp;&nbsp;&nbsp; 
+    </div>
+</header>
+<div class="container">
+
+{% for field in form %}
+    <div class="row">
+
+       <div class="col-md-2">
+        <label class="field-label{% if field.field.required  %} field-required{%endif%} text-primary" for="{{ field.name }}">{{ field.label }}</label>
+        {% if field.help_text %}
+          <br><sup>{{ field.help_text|safe }}</sup>
+          <br><br>
+        {% endif %}
+        <font color=red><b>{{ field.errors }}</b></font>
+       </div>
+
+       <div class="col-md-8 pull-left">
+
+         {% if field.label in '검토여부' %}
+          {% if request.user.id in prov_poss_id or user.is_superuser %}
+            {{ field | attr:"class:form-control"}}
+          {% else %}
+            <fieldset disabled="disabled">
+              {{ field | attr:"class:form-control"}}
+            </fieldset>
+          {% endif %}
+         {% elif field.label in '승인자,조회 데이터' %}
+          {{ field }}
+          <br><br>
+         {% else %}
+          {{ field | attr:"class:form-control"}}
+          <br>
+         {% endif %}
+
+       </div>
+    </div>
+ {% endfor %}
+
+<br>
+{% if request.user.id in prov_poss_id or user.is_superuser %}
+  <button type="submit" class="btn btn-primary" onclick="return confirm('저장하시겠습니까?');">완료</button>
+{% elif request.user.id == objects.id_reg_user.id %}
+  <button type="submit" class="btn btn-primary" onclick="return confirm('수정된 내용으로 다시 요청할까요?');">수정/재요청</button>
+{% endif %}
+
+
+<a type="button" href="{% url 'DataRequestLV' %}" class="btn btn-primary">목록으로</a>
+
+
+{{ form.media }}
+
+<!-- </div> -->
+
+</form>
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<link href="{% static 'custom/css/summernote.min.css' %}" rel="stylesheet">
+<script src="{% static 'custom/js/summernote.min.js' %}"></script>
+
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  $('#id_data_explain').summernote({
+    placeholder: '설명해주세요',
+    tabsize: 2,
+    height: 200
+  })
+
+
+
+
+  // $('#id_prov_yn').attr('disabled', true);
+
+
+  // if ( "{{request.user.id}}" == "{{object.id_prov_user.id}}")
+  // {
+  //   $('#id_prov_yn').attr('disabled', false);
+  // }
+
+});
+</script>
+
+
+
+{%endblock%}
+
+
+
+
+

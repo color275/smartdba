@@ -1,0 +1,257 @@
+
+{% extends "base.html" %}
+
+{% load static %}
+{% load database_extras %}
+
+{% block title %}SmartDBA{% endblock %}
+
+{%block content %}
+
+<header class="page-header">
+    <h2>SQL 성능 개선 요청</h2>
+    <div class="right-wrapper pull-right">
+    <ol class="breadcrumbs">
+      <li>
+        {% if user.is_superuser %}          
+          <a href="http://{{ request.get_host }}/admin/database/tuninglist/{{objects.id}}/change/" target="blank">&nbsp;
+            <button type="button" class="btn btn-xs btn-success">Admin</button>
+          </a>
+        {% endif %}
+      </li>
+    </ol>&nbsp;&nbsp;&nbsp;&nbsp; 
+  </div>
+
+    <style type="text/css">
+    	.text-primary {
+    		font-weight: bold;
+    		background-color: #F7F9F6;
+    	}
+		pre {
+		            overflow-x: auto;
+		            white-space: pre-wrap;
+		            white-space: -moz-pre-wrap;
+		            white-space: -pre-wrap;
+		            white-space: -o-pre-wrap;
+		            word-wrap: break-word;
+		            background-color: #FFFFFF;
+		            border: 0px dashed #FFFFFF;
+		            padding-top: 0px;
+                    padding-bottom: 0px;
+                    padding-left: 0px;
+                    padding-right: 0px;
+                    float: none;
+                    margin: 0px;
+		}
+		#id_id_tuningstatus {
+		    width: 130px;
+		    display: inline;
+		    vertical-align: middle;
+		}
+		#btn_status_save {
+		    width: 50px;
+		   	height: 30px;
+		    display: inline;
+		    vertical-align: middle;
+		}
+
+    </style>
+</header>
+
+
+<!-- start: page -->
+<form method="POST" action="#"  >
+{%csrf_token%}
+
+	{% if request.user.id in dba_users or request.user.id == objects.id_reg_user.id %}
+		<button id="btn_del" type="input" class="mb-xs mt-xs mr-xs btn btn-sm btn-primary pull-right" formaction="{% url 'TuningListDeleteView' objects.id %}" onclick="if (confirm('정말 삭제하시겠습니까?')) commentDelete(1); return false"> <i class="fa fa-question-circle"></i> SQL 삭제</button>
+		<a id="btn_edit" type="button" class="mb-xs mt-xs mr-xs btn btn-sm btn-primary pull-right" href="{% url 'TuningListUV' objects.id %}"><i class="fa fa-plus-square"></i> 수정하기</a>
+	{% endif %}
+	<a type="button" href="{% url 'TuningListLV' %}" class="mb-xs mt-xs mr-xs btn btn-sm btn-primary pull-right">목록으로</a>
+
+	<div class="tabs">
+		<ul class="nav nav-tabs">
+			<li class="active">
+				<a href="#sql_info" data-toggle="tab"> 성능개선 요청 정보</a>
+			</li>
+			<li>
+				<a href="#tuner_say" data-toggle="tab">튜너 의견</a>
+			</li>
+			<li>
+				<a href="#sql_asis_tobe" data-toggle="tab">SQL</a>
+			</li>
+		</ul>
+		<div class="tab-content">
+			<div id="sql_info" class="tab-pane active">
+				<table class="table table-bordered mb-none">
+					<tr>
+						<td style="text-align: center;" class="text-primary">요청자</td>
+						<td style="text-align: center;">{{objects.id_reg_user}}</td>
+						<td style="text-align: center;" class="text-primary">데이터베이스</td>
+						<td style="text-align: center;">{{objects.id_dblist}}</td>
+						<td style="text-align: center;" class="text-primary">도메인/프로젝트</td>
+						<td style="text-align: center;">{{objects.id_domain|default_if_none:"--"}}/{{objects.id_projectlist|default_if_none:"--"}}</td>
+						<td style="text-align: center;" class="text-primary">SQL유형</td>
+						<td style="text-align: center;">{{objects.get_sql_type_display}}</td>
+						<td style="text-align: center;" class="text-primary">요청일시</td>
+						<td style="text-align: center;">{{objects.reg_dtm|date:"Y/m/d"}}</td>
+						<td style="text-align: center;" class="text-primary">희망배포일</td>
+						<td style="text-align: center;">{{objects.dist_dtm|date:"Y/m/d"}}</td>
+
+					</tr>
+					<tr>
+					</tr>
+					<tr>
+						<td style="text-align: center; vertical-align: middle;" class="text-primary">튜너</td>
+						<td style="text-align: center; vertical-align: middle;">{{objects.id_tuning_user|default_if_none:"--"}}</td>
+						<td style="text-align: center; vertical-align: middle;" class="text-primary">일 수행 횟수</td>
+						<td style="text-align: center; vertical-align: middle;">{{objects.daily_exec_cnt|default_if_none:"--"}}회</td>						
+						<td style="text-align: center; vertical-align: middle;" class="text-primary">튜닝 전 수행 시간</td>
+						<td style="text-align: center; vertical-align: middle;">{{objects.asis_elapsed_time|floatformat:2|default_if_none:"--"}}초</td>
+						<td style="text-align: center; vertical-align: middle;" class="text-primary">기대 수행 시간</td>
+						<td style="text-align: center; vertical-align: middle;">{{objects.expect_elapsed_time|floatformat:2|default_if_none:"--"}}초</td>
+						<td style="text-align: center; vertical-align: middle;" class="text-primary">평균 결과 건수</td>
+						<td style="text-align: center; vertical-align: middle;">{{objects.avg_rows|default_if_none:""}}건</td>
+						<td style="text-align: center; vertical-align: middle;" class="text-primary">요청상태</td>
+						<td style="text-align: center; vertical-align: middle;">							
+							{% if user.is_superuser or request.user.id == objects.id_reg_user.id %}          
+								{{form.id_tuningstatus}} <button class="btn btn-xs btn-default" id="btn_status_save">저장</button>
+							{% else %}
+								{{objects.id_tuningstatus}}
+							{% endif %}</td>						
+
+
+					</tr>
+					<tr>
+						<td style="text-align: center;" class="text-primary">제목</td>
+						<td colspan=11 >{{objects.title}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: center;" class="text-primary">SQL_ID</td>
+						<td colspan=11 >{{objects.sql_id|default_if_none:""}}</td>
+					</tr>
+					<tr>
+						<td style="text-align: center;" class="text-primary">바인딩 값</td>
+						<td colspan=11 >{{objects.bind_value|safe}}</td>
+					</tr>
+					<tr style="height: 300px;text-align: center;">
+						<td class="text-primary">요청내용</td>
+						<td colspan=11 style="text-align: left">
+								<pre>{{objects.sql_info|safe}}</pre>
+						</td>
+					</tr>
+				</table>
+
+
+			</div>
+			<div id="tuner_say" class="tab-pane">
+				<table class="table table-bordered mb-none" style="table-layout: fixed">
+					<tr style="height: 100px;text-align: center;">
+						<td class="text-primary" style="width: 7%">튜너 의견</td>
+						<td style="text-align: left">
+							<pre>{{objects.tuning_info|safe}}</pre>
+						</td>
+					</tr>
+				</table>
+				<br>
+				<table class="table table-bordered mb-none" style="table-layout: fixed">
+					<tr style="text-align: center;">
+						<td class="text-primary" style="max-width: 50%">튜닝 전 Plan</td>
+						<td class="text-primary" style="max-width: 50%">튜닝 후 Plan</td>
+					</tr>
+					<tr>
+						<td>
+							<div>{% get_replace_br objects.asis_plan as result %} {{result|safe}}</div>
+						</td>
+						<td>
+							<div>{% get_replace_br objects.tobe_plan as result %} {{result|safe}}</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div id="sql_asis_tobe" class="tab-pane">
+				<table class="table table-bordered mb-none" style="table-layout: fixed">
+					<tr style="text-align: center;">
+						<td class="text-primary" style="width: 50%">튜닝 전 SQL</td>
+						<td class="text-primary" style="width: 50%">튜닝 후 SQL</td>
+					</tr>
+					<tr>
+						<td>
+							<div style="overflow:auto;white-space:nowrap;" contenteditable="true">
+							{% get_replace_br objects.asis_sql_text as result %} {{result|safe}}</div>
+							<!-- <div>{{objects.asis_sql_text|safe}}</div> -->
+						</td>
+						<td>
+							<div style="overflow:auto;white-space:nowrap;" contenteditable="true">{% get_replace_br objects.tobe_sql_text as result %} {{result|safe}}</div></div>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+
+<input type="hidden" id="is_superuser" value="{{request.user.is_superuser}}"></input>
+</form>
+
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+<script src="{% static 'assets/vendor/nanoscroller/nanoscroller.js' %}"></script>
+<script src="{% static 'assets/vendor/select2/select2.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'assets/vendor/jquery-datatables-bs3/assets/js/datatables.js' %}"></script>
+<script src="{% static 'assets/javascripts/theme.js' %}"></script>
+<script src="{% static 'custom/js/merge.js' %}"></script>
+
+
+<script type="text/javascript">
+
+	$("#btn_status_save").click(function(){
+
+		var sel = document.getElementById('id_id_tuningstatus');
+		var opt = sel.options[sel.selectedIndex];
+		id_tuningstatus = opt.value
+
+		if ( id_tuningstatus == "" )
+			return
+
+		obj_id = '{{objects.id}}'
+
+
+		$.ajax({
+	      type: "POST",
+	      url: "{% url 'ajaxTuningListDVModifyTuningStatus' %}",
+	      data: {
+	      		  'id_tuningstatus' : id_tuningstatus,
+	      		  'obj_id' : obj_id,
+	              'csrfmiddlewaretoken': '{{ csrf_token }}'},
+	      dataType: "json",
+	      "success": function(json) {	      		
+	      		if (json.success == "ok")
+	      		{
+	      			alert("저장되었습니다.")	      			
+	      		}		      	
+	        },
+	        beforeSend:function(){
+
+			},
+		    complete:function(){
+
+		    },
+
+	      error: function(request, status, error){ // 통신 실패시 - 로그인 페이지 리다이렉트
+	      	alert("에러가 발견되었습니다." + "\n" + "* message :"+  "\n" + request.responseText)
+	      },
+		});
+	})
+
+</script>
+
+{%endblock%}
+
+
+
+
+
+

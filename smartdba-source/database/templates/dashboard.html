@@ -1,0 +1,330 @@
+
+
+{% extends "base.html" %}
+
+{% load static %}
+
+
+{% block title %}SmartDBA{% endblock %}
+
+
+{%block content %}
+
+<head>
+
+<style type="text/css">
+.btn {
+  border: 2px solid black;
+  border-radius: 10px;
+  background-color: white;
+  color: black;
+  padding: 5px 5px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+
+/* Green */
+.success {
+  border-color: #4CAF50;
+  color: green;
+}
+
+.success:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+.active, .btn:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+/* Blue */
+
+
+/* Orange */
+.warning {
+  border-color: #ff9800;
+  color: orange;
+}
+
+.warning:hover {
+  background: #ff9800;
+  color: white;
+}
+
+/* Red */
+.danger {
+  border-color: #f44336;
+  color: red
+}
+
+.danger:hover {
+  background: #f44336;
+  color: white;
+}
+
+/* Gray */
+.default {
+  border-color: #e7e7e7;
+  color: black;
+}
+
+.default:hover {
+  background: #e7e7e7;
+}
+div {
+         border: 0px dashed #bcbcbc;
+    }
+.div_request {
+  padding-left: 0px;
+  padding-bottom: 0px;
+
+
+}
+</style>
+
+
+
+</head>
+
+<header class="page-header">
+	<h2>홈</h2>
+</header>
+
+
+
+          <header class="page-header">
+            <h2>홈</h2>
+          </header>
+
+
+          <div class="col-lg-12" >
+            <section class="panel"> 
+
+           
+
+
+              <div class="col-lg-4 div_request">
+                <section class="panel panel-featured-left panel-featured-primary">
+                  <div class="panel-body">
+                    <div class="widget-summary">
+                      <div class="widget-summary-col widget-summary-col-icon">
+                        <div class="summary-icon bg-primary">
+                          <i class="fa fa-database"></i>
+                        </div>
+                      </div>
+                      <div class="widget-summary-col">
+                        <div class="summary">
+                          <h4 class="title">새로운 데이터</h4>
+                          <div class="info">
+                            <strong class="amount">{{dashboard_cnt.new_data}}</strong>
+                            <!-- <span class="text-primary">(14 unread)</span> -->
+                          </div>
+                        </div>
+                        <div class="summary-footer">
+                          <a class="text-muted">(View All)</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+
+
+              <div class="col-lg-2 div_request">
+                <section class="panel panel-featured-left panel-featured-secondary">
+                  <div class="panel-body">
+                    <div class="widget-summary">
+                      <div class="widget-summary-col widget-summary-col-icon">
+                        <div class="summary-icon bg-secondary">
+                          <i class="fa fa-question"></i>
+                        </div>
+                      </div>
+                      <div class="widget-summary-col">
+                        <div class="summary">
+                          <h4 class="title">데이터 요청</h4>
+                          <div class="info">
+                            <strong class="amount">{{dashboard_cnt.request}}</strong>
+                            <!-- <span class="text-primary">(2 / 2 Complete)</span> -->
+                          </div>
+                        </div>
+                        <div class="summary-footer">
+                          <a class="text-muted">(View All)</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div class="col-lg-4 div_request">
+                <section class="panel panel-featured-left panel-featured-tertiary">
+                  <div class="panel-body">
+                    <div class="widget-summary">
+                      <div class="widget-summary-col widget-summary-col-icon">
+                        <div class="summary-icon bg-tertiary">
+                          <i class="fa fa-send"></i>
+                        </div>
+                      </div>
+                      <div class="widget-summary-col">
+                        <div class="summary">
+                          <h4 class="title">성능개선 요청</h4>
+                          <div class="info">
+                            <strong class="amount">{{dashboard_cnt.tuning}}</strong>
+                          </div>
+                        </div>
+                        <div class="summary-footer">
+                          <a class="text-muted">(View All)</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              
+            </section>
+          </div>
+
+
+          <div class="col-lg-12">
+            <div class="col-lg-4 div_request">
+                <section class="panel">
+                  <header class="panel-heading panel-heading-transparent">
+                    <h2 class="panel-title">인기있는 데이터</h2>
+                  </header>
+                  <div class="panel-body">
+                    <div class="table-responsive">
+                      <table class="table table-striped mb-none">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Keyword</th>
+                            <th>Type</th>
+                            <th style="text-align: center;">Search Count</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for data in dataset_user_click_data %}
+                            <tr>
+                              <td>{{data.ROWNUM}}</td>
+                              <td data-toggle="tooltip" data-placement="left" title="{{data.DATA_DESC}}">
+                              <a href="{% url 'dataSearchKeyword' data.DATA_DESC %}">{{data.DATA_DESC|truncatechars:15}}</a>
+                              </td>
+                              <td>
+                                    {% if data.DATA_TYPE == 0 %}
+                                      <span class="label label-success">
+                                        TABLE
+                                      </span></td>
+                                    {% else %}
+                                      <span class="label label-warning">
+                                        SQL
+                                      </span></td>
+                                    {% endif %}
+                              <td style="text-align: center;">
+                                <!-- <div class="progress progress-sm progress-half-rounded m-none mt-xs light">
+                                  <div class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 100%;">
+                                    100%
+                                  </div>
+                                </div> -->
+                                {{data.CNT}}
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+
+              <div class="col-lg-3 div_request">
+                <section class="panel">
+                  <header class="panel-heading panel-heading-transparent">
+                    <h2 class="panel-title">인기있는 검색어</h2>
+                  </header>
+                  <div class="panel-body">
+                    <div class="table-responsive">
+                      <table class="table table-striped mb-none">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Keyword</th>
+                            <th style="text-align: center;">Search Count</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for data in dataset_user_search_keyword %}
+                            <tr>
+                              <td>{{data.ROWNUM}}</td>
+                              <td data-toggle="tooltip" data-placement="left" title="{{data.KEYWORD}}">                              
+                              <a href="{% url 'dataSearchKeyword' data.KEYWORD %}">{{data.KEYWORD}}</a>
+                              </td>
+                              <td style="text-align: center;">
+                                {{data.CNT}}
+                                <!-- <div class="progress progress-sm progress-half-rounded m-none mt-xs light">
+                                  <div class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 100%;">
+                                    100%
+                                  </div>
+                                </div> -->
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div class="col-lg-5 div_request">
+                <section class="panel">
+                  <header class="panel-heading panel-heading-transparent">
+                    <h2 class="panel-title">최근 등록된 데이터</h2>
+                  </header>
+                  <div class="panel-body">
+                    <div class="table-responsive">
+                      <table class="table table-striped mb-none">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Title</th>                            
+                            <th>Register</th>
+                            <th>Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for data in dataset_datalist %}
+                            <tr>
+                              <td>{{ forloop.counter }}</td>
+                              <td data-toggle="tooltip" data-placement="left" title="{{data.data_title_o}}">
+                                <a href="{% url 'dataSearchKeyword' data.data_title_m %}">{{data.data_title_o}}</a>                              
+                              </td>
+                              <td>{{data.id_reg_user}}</td>
+                              <td>{{data.reg_dtm|date:"SHORT_DATE_FORMAT"}}</td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+
+            </div>
+          </div>
+
+
+
+
+          <!-- end: page -->
+
+
+<script src="{% static 'assets/vendor/jquery/jquery.js' %}"></script>
+
+
+{%endblock%}
+
